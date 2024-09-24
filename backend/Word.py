@@ -31,3 +31,6 @@ class Word:
             "level": self.level,
             "nextReview": self.nextReview
         }
+    
+    def __str__(self):
+        return self.word, self.level, self.nextReview
