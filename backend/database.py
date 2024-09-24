@@ -18,17 +18,14 @@ def add_new_word(word: Word, userName: str, listName: str) -> bool:
     # Get the data from the document
     data = doc.to_dict()
     
-    # Create a new Word object
-    new_word = Word(word)
-    
     # Check if the word already exists
-    if new_word.exists(data["words"]):
+    if word.exists(data["words"]):
         return False
     
     # Add the word to the list
-    data["words"].append(new_word.getWord())
-    data["level"].append(new_word.getLevel())
-    data["nextReview"].append(new_word.getNextReview())
+    data["words"].append(word.getWord())
+    data["level"].append(word.getLevel())
+    data["nextReview"].append(word.getNextReview())
     
     # Update the document
     doc_ref.set(data)
