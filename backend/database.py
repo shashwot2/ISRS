@@ -8,7 +8,7 @@ cred = credentials.Certificate("miro-manics-firebase-adminsdk-h5bf6-ae6fe46661.j
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-def add_new_word(word: Word, listName: str, userName: str) -> bool:
+def add_new_word(word: Word, userName: str, listName: str) -> bool:
     # Get the reference to the document
     doc_ref = db.collection(userName).document(listName)
     
@@ -31,7 +31,7 @@ def add_new_word(word: Word, listName: str, userName: str) -> bool:
     doc_ref.set(data)
     return True
 
-def add_new_list(listName: str, userName: str) -> None:
+def add_new_list(userName: str, listName: str) -> None:
     doc_ref = db.collection(userName).document(listName)
     doc_ref.set({
         "words": [],
@@ -39,7 +39,7 @@ def add_new_list(listName: str, userName: str) -> None:
         "nextReview": []
     })
 
-def get_words(listName: str, userName: str) -> list:
+def get_words(userName: str, listName: str, ) -> list:
     doc_ref = db.collection(userName).document(listName)
     doc = doc_ref.get()
     data = doc.to_dict()
@@ -49,7 +49,7 @@ def get_words(listName: str, userName: str) -> list:
         Words.append(word)
     return Words
 
-def get_add_days(self, level:int)->int:
+def get_add_days(level:int)->int:
         if level == 1:
             return 1
         elif level == 2:
@@ -60,9 +60,9 @@ def get_add_days(self, level:int)->int:
             return 35
         else:
             level += 1
-            return 2 * self.update_level(level-1)
+            return 2 * get_add_days(level) - 1
         
-def update_word(word: str, listName: str, userName: str) -> None:
+def update_word(word: str, userName: str, listName: str) -> None:
     doc_ref = db.collection(userName).document(listName)
     doc = doc_ref.get()
     data = doc.to_dict()
@@ -74,4 +74,8 @@ def update_word(word: str, listName: str, userName: str) -> None:
             newNextReview = nextReview + timedelta(days = get_add_days(level))
             data["level"][i] = newLevel
             data["nextReview"][i] = newNextReview
+            doc_ref.update({
+                "level": data["level"],
+                "nextReview": data["nextReview"]
+            })
             break

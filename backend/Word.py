@@ -1,10 +1,10 @@
 from datetime import datetime
 from datetime import timedelta
 class Word:
-    def __init__(self, word):
+    def __init__(self, word, level = 1, nextReview = datetime.now()):
         self.word = word
-        self.level = 1
-        self.nextReview = datetime.now()
+        self.level = level
+        self.nextReview = nextReview
     
     def setLevel(self, level, nextReview):
         self.level = level
@@ -31,6 +31,3 @@ class Word:
             "level": self.level,
             "nextReview": self.nextReview
         }
-    
-    def __str__(self):
-        return self.word, self.level, self.nextReview
