@@ -1,15 +1,18 @@
 import React, { useState } from "react";
-import { Text, View, TextInput, Button, ActivityIndicator } from "react-native";
+import { FlatList, StyleSheet, Pressable, Text, View, TextInput, Button, ActivityIndicator } from "react-native";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getFireBaseConfig } from "@/hooks/useFirebase";
-
+import * as Font from 'expo-font';
+import { useFonts, Inter_900Black } from '@expo-google-fonts/inter';
+import AppLoading from 'expo-app-loading';
 const app = initializeApp(getFireBaseConfig());
 const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 
 export default function Index() {
+  const [fontsLoaded] = useFonts({ Inter_900Black });
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,6 +20,10 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
+    
+    if (!fontsLoaded) {
+    return <AppLoading />;
+  }
 
   const fetchData = async () => {
     setLoading(true);
@@ -71,7 +78,11 @@ export default function Index() {
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+    <View style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#F7F0E0"
+ }}>
+    <Text style ={{ fontSize: 55, marginBottom: 10, textAlign: "center", fontFamily: "Inter_900Black",fontWeight:"Bold", }}>
+     Engrave
+     </Text>
       <Text style={{ fontSize: 24, marginBottom: 20, textAlign: "center" }}>
         {isLogin ? "Login" : "Sign Up"}
       </Text>
@@ -105,10 +116,16 @@ export default function Index() {
       
       {error && <Text style={{ color: "red", marginBottom: 20 }}>{error}</Text>}
       
-      <Button
+      <Pressable
+      style={styles.button}
         title={isLogin ? "Login" : "Sign Up"}
         onPress={isLogin ? handleLogin : handleSignup}
-      />
+      >
+      <Text
+      style={styles.buttonText}>
+      {isLogin? "LOG IN" : "Sign Up"}
+      </Text>
+      </Pressable>
 
       <Text
         style={{ marginTop: 20, textAlign: "center", color: "blue" }}
@@ -134,4 +151,20 @@ export default function Index() {
       )}
     </View>
   );
+  
 }
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#4A4A4A', 
+    borderRadius: 30, 
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF', // white text color
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
