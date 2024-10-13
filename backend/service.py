@@ -8,16 +8,10 @@ class Service:
     def add_new_list(self, userName: str, listName: str) -> None:
         add_new_list(userName, listName)
 
-    def add_new_word(self, word: str, userName: str, listName: str) -> bool:
-        newWord = Word(word)
-        return add_new_word(newWord, userName, listName)
+    def add_new_word(self, word: str, language: str, userName: str, listName: str) -> None:
+        newWord = Word(word, language)
+        return add_new_word(newWord, userName, listName) 
     
-    def get_words(self, userName: str, listName: str) -> list:
-        Words = get_words(userName, listName)
-        output = []
-        for word in Words:
-            output.append(word.to_json())
-        return output
     
     def update_word(self, word: str, userName: str, listName: str) -> None:
         update_word(word, userName, listName)
@@ -25,16 +19,16 @@ class Service:
     def copy_list(self, sourceList: str, targetList: str, targetUser: str, sourceUser: str) -> None:
         Words = get_words(sourceUser, sourceList)
         for word in Words:
-            add_new_word(Word(word.getWord()), targetUser, targetList)
+            add_new_word(Word(word.getWord(), word.getLanguage()), targetUser, targetList)
+
 
 a = Service()
 a.add_new_list("user0", "list1")
 a.add_new_list("user0", "list2")
-a.add_new_word("word1", "user0", "list1")
-a.add_new_word("word2", "user0", "list1")
-a.add_new_word("word3", "user0", "list1")
-a.add_new_word("word4", "user0", "list1")
-a.update_word("word1", "user0", "list1")
-a.update_word("word1", "user0", "list1")
-a.copy_list("list1", "list2", "user0", "user0")
+a.add_new_word("hello", "English", "user0", "list1")
+a.add_new_word("你好", "Chinese", "user0", "list1")
+a.add_new_word("你好", "Chinese", "user0", "list2")
+a.update_word("你好", "user0", "list2")
+a.copy_list("list2", "list3", "user1", "user0")
+
 
