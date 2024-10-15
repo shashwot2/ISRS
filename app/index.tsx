@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FlatList, StyleSheet, Pressable, Text, View, TextInput, Button, ActivityIndicator } from "react-native";
+import { FlatList, StyleSheet, Pressable, Text, View, TextInput, Button, ActivityIndicator, Platform } from "react-native";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
@@ -8,7 +8,10 @@ import * as Font from 'expo-font';
 import { useFonts, Inter_900Black } from '@expo-google-fonts/inter';
 import AppLoading from 'expo-app-loading';
 const app = initializeApp(getFireBaseConfig());
-const analytics = getAnalytics(app);
+let analytics;
+if (Platform.OS === 'web') {
+  analytics = getAnalytics(app);
+}
 export const auth = getAuth(app);
 
 export default function Index() {
@@ -16,12 +19,12 @@ export default function Index() {
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); 
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isLogin, setIsLogin] = useState(true);
-    
-    if (!fontsLoaded) {
+
+  if (!fontsLoaded) {
     return <AppLoading />;
   }
 
@@ -78,11 +81,12 @@ export default function Index() {
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#F7F0E0"
- }}>
-    <Text style ={{ fontSize: 55, marginBottom: 10, textAlign: "center", fontFamily: "Inter_900Black",fontWeight:"Bold", }}>
-     Engrave
-     </Text>
+    <View style={{
+      flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#F7F0E0"
+    }}>
+      <Text style={{ fontSize: 55, marginBottom: 10, textAlign: "center", fontFamily: "Inter_900Black", fontWeight: "Bold", }}>
+        Engrave
+      </Text>
       <Text style={{ fontSize: 24, marginBottom: 20, textAlign: "center" }}>
         {isLogin ? "Login" : "Sign Up"}
       </Text>
@@ -93,7 +97,7 @@ export default function Index() {
         onChangeText={setEmail}
         style={{ marginBottom: 20, padding: 10, borderWidth: 1, borderColor: "#ccc" }}
       />
-      
+
       <TextInput
         placeholder="Password"
         value={password}
@@ -113,18 +117,18 @@ export default function Index() {
       )}
 
       {loading && <ActivityIndicator size="large" color="#0000ff" />}
-      
+
       {error && <Text style={{ color: "red", marginBottom: 20 }}>{error}</Text>}
-      
+
       <Pressable
-      style={styles.button}
+        style={styles.button}
         title={isLogin ? "Login" : "Sign Up"}
         onPress={isLogin ? handleLogin : handleSignup}
       >
-      <Text
-      style={styles.buttonText}>
-      {isLogin? "LOG IN" : "Sign Up"}
-      </Text>
+        <Text
+          style={styles.buttonText}>
+          {isLogin ? "LOG IN" : "Sign Up"}
+        </Text>
       </Pressable>
 
       <Text
@@ -151,12 +155,12 @@ export default function Index() {
       )}
     </View>
   );
-  
+
 }
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#4A4A4A', 
-    borderRadius: 30, 
+    backgroundColor: '#4A4A4A',
+    borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: 40,
     alignItems: 'center',
