@@ -14,7 +14,7 @@ if (Platform.OS === 'web') {
 }
 export const auth = getAuth(app);
 
-export default function Index() {
+export default function Welcome() {
   const [fontsLoaded] = useFonts({ Inter_900Black });
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");
