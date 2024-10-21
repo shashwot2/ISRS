@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, Button } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
 import { initializeApp } from "firebase/app";
-import { useAuth } from '@/context/AuthContext';
 import { useFonts, Inter_900Black } from '@expo-google-fonts/inter';
 import { getFireBaseConfig } from "@/hooks/useFirebase";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 const app = initializeApp(getFireBaseConfig());
 export const auth = getAuth(app);
 
-const LoginScreen: React.FC = () => {
+export const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const [data, setData] = useState(null);
   const [email, setEmail] = useState("");

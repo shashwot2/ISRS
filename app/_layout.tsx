@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth, AuthProvider } from '@/../context/AuthContext';
+import { useAuth, AuthProvider } from '../context/auth';
 
-import WelcomeScreen from './index';
-import LoginScreen from './login';
-import DashboardScreen from './dashboard';
+import Welcome from './index';
+import { LoginScreen } from './login';
+import dashboard from './dashboard';
 
 type RootStackParamList = {
   Welcome: undefined;
@@ -19,20 +19,18 @@ function AppNavigator() {
   const { user } = useAuth();
 
   return (
-    <NavigationContainer>
       <Stack.Navigator>
         {user ? (
           <>
-            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="Dashboard" component={dashboard} />
           </>
         ) : (
           <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Welcome" component={Welcome} />
             <Stack.Screen name="Login" component={LoginScreen} />
           </>
         )}
       </Stack.Navigator>
-    </NavigationContainer>
   );
 }
 
