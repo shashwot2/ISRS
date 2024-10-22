@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export const Dashboard = () => {
+export default function Dashboard() {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>Hello, welcome!</Text>
@@ -22,5 +22,3 @@ const styles = StyleSheet.create({
         margin: 10,
     },
 });
-
-export default Dashboard;
