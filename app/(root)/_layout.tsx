@@ -15,7 +15,7 @@ export default function AppLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="dashboard" />
+      <Stack.Screen name="language" options={{headerShown:false}}/>
     </Stack>
   );
 }

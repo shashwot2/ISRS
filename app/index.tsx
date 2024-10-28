@@ -19,7 +19,7 @@ export default function Home() {
   useEffect(() => {
     if (isLayoutMounted && !loading) {
       if (user) {
-        router.replace('/(root)/dashboard'); 
+        router.replace('/(root)/language'); 
       } else {
         router.replace('/sign-in');
       }
