@@ -19,9 +19,9 @@ import {
 } from 'firebase/auth';
 
 const app = initializeApp(getFireBaseConfig());
-export const auth = getAuth(app);
+const auth = getAuth(app);
 
-const LoginScreen = () => {
+export default function SignIn () {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,9 +41,9 @@ const LoginScreen = () => {
         email,
         password
       );
+      router.replace('/(root)/dashboard');
       console.log('User signed in:', userCredential.user);
       login(userCredential.user.email || 'Guest');
-      router.replace('/(root)/dashboard'); // Navigate to the dashboard
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
       console.log(err);
@@ -70,7 +70,6 @@ const LoginScreen = () => {
       );
       console.log('User signed up:', userCredential.user);
       login(userCredential.user.email || 'Guest');
-      router.replace('/(root)/dashboard'); // Navigate to the dashboard
     } catch (err) {
       setError('Failed to sign up. Please try again.');
       console.log(err);
@@ -185,4 +184,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
