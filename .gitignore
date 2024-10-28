@@ -134,3 +134,4 @@ dist
 
 expo-env.d.ts
 # @end expo-cli
+%ProgramData%/Microsoft/Windows/UUS/State/_active.uusver
