@@ -18,6 +18,7 @@ export default function AppLayout() {
     <LanguageLearningProvider>
       <Stack>
         <Stack.Screen name="language" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </LanguageLearningProvider>
   );

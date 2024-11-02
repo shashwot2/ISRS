@@ -71,21 +71,22 @@ export default function LearningPreferencesForm() {
       setValue: setStudyPattern
     }
   ];
-
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      const preferences = {
-        motivation,
-        proficiencyLevel,
-        learningStyle,
-        studyPattern,
-        notifications
-      };
-      setLearningPreferences(preferences);
-      router.push('/dashboard');
-    }
+  const handleSubmit = () => {
+    const preferences = {
+      motivation,
+      studyPattern,
+      learningPace,
+      proficiencyLevel,
+      learningStyle,
+      age,
+      goal,
+      notifications,
+      dailyReminder,
+      speakingPractice,
+    };
+    
+    setLearningPreferences(preferences);
+    router.push('/(root)/(tabs)/deckselection');
   };
 
   const StepOption: React.FC<StepOptionProps> = ({ text, isSelected, onSelect }) => (
