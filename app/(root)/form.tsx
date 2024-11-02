@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Switch, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
 
@@ -71,22 +71,21 @@ export default function LearningPreferencesForm() {
       setValue: setStudyPattern
     }
   ];
-  const handleSubmit = () => {
-    const preferences = {
-      motivation,
-      studyPattern,
-      learningPace,
-      proficiencyLevel,
-      learningStyle,
-      age,
-      goal,
-      notifications,
-      dailyReminder,
-      speakingPractice,
-    };
-    
-    setLearningPreferences(preferences);
-    router.push('/(root)/(tabs)/deckselection');
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      const preferences = {
+        motivation,
+        proficiencyLevel,
+        learningStyle,
+        studyPattern,
+        notifications
+      };
+      setLearningPreferences(preferences);
+      router.push('/profile');
+    }
   };
 
   const StepOption: React.FC<StepOptionProps> = ({ text, isSelected, onSelect }) => (

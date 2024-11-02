@@ -1,4 +1,3 @@
-// app/sign-in.js
 import React, { useState } from 'react';
 import {
   View,
@@ -16,18 +15,65 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  AuthErrorCodes,
 } from 'firebase/auth';
 
 const app = initializeApp(getFireBaseConfig());
 const auth = getAuth(app);
 
-export default function SignIn () {
+const getAuthErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    // Sign In Errors
+    case AuthErrorCodes.INVALID_EMAIL:
+      return 'Invalid email address format';
+    case AuthErrorCodes.USER_DELETED:
+      return 'No account exists with this email';
+    case AuthErrorCodes.INVALID_PASSWORD:
+      return 'Incorrect password';
+    case AuthErrorCodes.USER_DISABLED:
+      return 'This account has been disabled';
+    case AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER:
+      return 'Too many failed attempts. Please try again later';
+    
+    // Sign Up Errors
+    case AuthErrorCodes.EMAIL_EXISTS:
+      return 'An account already exists with this email';
+    case AuthErrorCodes.WEAK_PASSWORD:
+      return 'Password should be at least 6 characters';
+    case AuthErrorCodes.OPERATION_NOT_ALLOWED:
+      return 'Email/password sign up is not enabled';
+    
+    // Network Errors
+    case AuthErrorCodes.NETWORK_REQUEST_FAILED:
+      return 'Network connection failed. Please check your internet';
+    
+    default:
+      return 'An unexpected error occurred. Please try again';
+  }
+};
+
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) return 'Email is required';
+  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+  return null;
+};
+
+const validatePassword = (password: string) => {
+  if (!password) return 'Password is required';
+  if (password.length < 6) return 'Password must be at least 6 characters';
+  if (!/\d/.test(password)) return 'Password must contain at least one number';
+  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter';
+  return null;
+};
+
+export default function SignIn() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
   const router = useRouter();
 
@@ -35,18 +81,32 @@ export default function SignIn () {
     setLoading(true);
     setError(null);
 
+    // Validate inputs
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      setLoading(false);
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      setLoading(false);
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      router.replace('/(root)/dashboard');
-      console.log('User signed in:', userCredential.user);
+      router.replace('/(root)/language');
       login(userCredential.user.email || 'Guest');
-    } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
-      console.log(err);
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err.code));
+      console.log('Login error:', err.code, err.message);
     } finally {
       setLoading(false);
     }
@@ -55,6 +115,20 @@ export default function SignIn () {
   const handleSignup = async () => {
     setLoading(true);
     setError(null);
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      setLoading(false);
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -68,49 +142,29 @@ export default function SignIn () {
         email,
         password
       );
-      console.log('User signed up:', userCredential.user);
+      router.replace('/(root)/language');
       login(userCredential.user.email || 'Guest');
-    } catch (err) {
-      setError('Failed to sign up. Please try again.');
-      console.log(err);
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err.code));
+      console.log('Signup error:', err.code, err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Rest of your component remains the same
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#F7F0E0',
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 55,
-          marginBottom: 10,
-          textAlign: 'center',
-          fontWeight: 'bold',
-        }}
-      >
-        Engrave
-      </Text>
-      <Text style={{ fontSize: 24, marginBottom: 20, textAlign: 'center' }}>
-        {isLogin ? 'Login' : 'Sign Up'}
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Engrave</Text>
+      <Text style={styles.subtitle}>{isLogin ? 'Login' : 'Sign Up'}</Text>
 
       <TextInput
         placeholder='Email'
         value={email}
         onChangeText={setEmail}
-        style={{
-          marginBottom: 20,
-          padding: 10,
-          borderWidth: 1,
-          borderColor: '#ccc',
-        }}
+        style={styles.input}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -118,12 +172,7 @@ export default function SignIn () {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={{
-          marginBottom: 20,
-          padding: 10,
-          borderWidth: 1,
-          borderColor: '#ccc',
-        }}
+        style={styles.input}
       />
 
       {!isLogin && (
@@ -132,33 +181,29 @@ export default function SignIn () {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
-          style={{
-            marginBottom: 20,
-            padding: 10,
-            borderWidth: 1,
-            borderColor: '#ccc',
-          }}
+          style={styles.input}
         />
       )}
 
       {loading && <ActivityIndicator size='large' color='#0000ff' />}
 
-      {error && (
-        <Text style={{ color: 'red', marginBottom: 20 }}>{error}</Text>
-      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <Pressable
         style={styles.button}
         onPress={isLogin ? handleLogin : handleSignup}
       >
         <Text style={styles.buttonText}>
-          {isLogin ? 'LOG IN' : 'Sign Up'}
+          {isLogin ? 'LOG IN' : 'SIGN UP'}
         </Text>
       </Pressable>
 
       <Text
-        style={{ marginTop: 20, textAlign: 'center', color: 'blue' }}
-        onPress={() => setIsLogin(!isLogin)}
+        style={styles.switchText}
+        onPress={() => {
+          setIsLogin(!isLogin);
+          setError(null);
+        }}
       >
         {isLogin
           ? "Don't have an account? Sign Up"
@@ -166,13 +211,38 @@ export default function SignIn () {
       </Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#F7F0E0',
+  },
+  title: {
+    fontSize: 55,
+    marginBottom: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    marginBottom: 20,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
   button: {
     backgroundColor: '#4A4A4A',
     borderRadius: 30,
-    paddingVertical: 10,
+    paddingVertical: 15,
     paddingHorizontal: 40,
     alignItems: 'center',
     justifyContent: 'center',
@@ -182,5 +252,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  errorText: {
+    color: '#D32F2F',
+    marginBottom: 20,
+    textAlign: 'center',
+    padding: 10,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 5,
+  },
+  switchText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#1976D2',
+    textDecorationLine: 'underline',
+  },
 });
-
