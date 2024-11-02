@@ -1,301 +1,189 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
-import { useLanguageLearning } from './languagecontext'
-interface SelectionGroupProps {
-  title: string;
-  options: string[];
-  selected: string;
-  onSelect: (option: string) => void;
-}
+import { useLanguageLearning } from './languagecontext';
 
-interface SwitchOptionProps {
-  title: string;
-  value: boolean;
-  onToggle: (value: boolean) => void;
-  description?: string;
+interface StepOptionProps {
+  text: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }
-
-type PreferenceOption = string;
 
 export default function LearningPreferencesForm() {
   const { selectedLanguage, setLearningPreferences } = useLanguageLearning();
-  // Original state
-  const [motivation, setMotivation] = useState<PreferenceOption>('');
-  const [studyPattern, setStudyPattern] = useState<PreferenceOption>('');
-  const [learningPace, setLearningPace] = useState<PreferenceOption>('');
-
-  // New state for additional features
-  const [proficiencyLevel, setProficiencyLevel] = useState<PreferenceOption>('');
-  const [learningStyle, setLearningStyle] = useState<PreferenceOption>('');
-  const [age, setAge] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState(0);
+  
+  // State management
+  const [motivation, setMotivation] = useState<string>('');
+  const [proficiencyLevel, setProficiencyLevel] = useState<string>('');
+  const [learningStyle, setLearningStyle] = useState<string>('');
+  const [studyPattern, setStudyPattern] = useState<string>('');
+  const [learningPace, setLearningPace] = useState<string>('');
   const [goal, setGoal] = useState<string>('');
   const [notifications, setNotifications] = useState<boolean>(true);
-  const [dailyReminder, setDailyReminder] = useState<boolean>(true);
-  const [speakingPractice, setSpeakingPractice] = useState<boolean>(true);
 
-  const motivations: PreferenceOption[] = [
-    "Work & Career",
-    "Travel",
-    "Cultural Interest",
-    "Family & Friends",
-    "Academic Study",
-    "Personal Growth"
+  // Step definitions
+  const steps = [
+    {
+      question: "Why are you learning a language?",
+      options: [
+        "Work & Career",
+        "Travel",
+        "Cultural Interest",
+        "Family & Friends",
+        "Academic Study",
+        "Personal Growth"
+      ],
+      value: motivation,
+      setValue: setMotivation
+    },
+    {
+      question: "What's your current level?",
+      options: [
+        "Complete Beginner",
+        "Basic Understanding",
+        "Intermediate",
+        "Advanced"
+      ],
+      value: proficiencyLevel,
+      setValue: setProficiencyLevel
+    },
+    {
+      question: "How do you learn best?",
+      options: [
+        "Visual Learner",
+        "Audio Learner",
+        "Reading & Writing",
+        "Interactive Practice"
+      ],
+      value: learningStyle,
+      setValue: setLearningStyle
+    },
+    {
+      question: "How often will you practice?",
+      options: [
+        "Daily Practice",
+        "Few Times a Week",
+        "Weekends Only",
+        "Flexible Schedule"
+      ],
+      value: studyPattern,
+      setValue: setStudyPattern
+    }
   ];
 
-  const studyPatterns: PreferenceOption[] = [
-    "Daily Practice",
-    "Few Times a Week",
-    "Weekends Only",
-    "Flexible Schedule"
-  ];
-
-  const learningPaces: PreferenceOption[] = [
-    "Casual (15min/day)",
-    "Regular (30min/day)",
-    "Intensive (1hr/day)",
-    "Immersive (2+hrs/day)"
-  ];
-
-  const proficiencyLevels: PreferenceOption[] = [
-    "Complete Beginner",
-    "Basic Understanding",
-    "Intermediate",
-    "Advanced"
-  ];
-
-  const learningStyles: PreferenceOption[] = [
-    "Visual Learner",
-    "Audio Learner",
-    "Reading & Writing",
-    "Interactive Practice"
-  ];
-  const handleSubmit = () => {
-    const preferences = {
-      motivation,
-      studyPattern,
-      learningPace,
-      proficiencyLevel,
-      learningStyle,
-      age,
-      goal,
-      notifications,
-      dailyReminder,
-      speakingPractice,
-    };
-    
-    setLearningPreferences(preferences);
-    router.push('/dashboard');
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      const preferences = {
+        motivation,
+        proficiencyLevel,
+        learningStyle,
+        studyPattern,
+        notifications
+      };
+      setLearningPreferences(preferences);
+      router.push('/dashboard');
+    }
   };
-  const SwitchOption: React.FC<SwitchOptionProps> = ({ title, value, onToggle, description }) => (
-    <View style={styles.switchContainer}>
-      <View style={styles.switchHeader}>
-        <Text style={styles.switchTitle}>{title}</Text>
-        <Switch
-          value={value}
-          onValueChange={onToggle}
-          trackColor={{ false: '#767577', true: '#333' }}
-          thumbColor={value ? '#fff' : '#f4f3f4'}
-        />
-      </View>
-      {description && (
-        <Text style={styles.switchDescription}>{description}</Text>
-      )}
-    </View>
+
+  const StepOption: React.FC<StepOptionProps> = ({ text, isSelected, onSelect }) => (
+    <TouchableOpacity
+      style={[styles.optionButton, isSelected && styles.selectedOption]}
+      onPress={onSelect}
+    >
+      <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
+        {text}
+      </Text>
+    </TouchableOpacity>
   );
 
-  const SelectionGroup: React.FC<SelectionGroupProps> = ({ title, options, selected, onSelect }) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.optionsContainer}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[
-              styles.optionButton,
-              selected === option && styles.selectedOption
-            ]}
-            onPress={() => onSelect(option)}
-          >
-            <Text style={[
-              styles.optionText,
-              selected === option && styles.selectedOptionText
-            ]}>
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
+  const currentStepData = steps[currentStep];
 
   return (
-    <ScrollView style={styles.scrollView}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Customize Your Learning Journey</Text>
-
-        <View style={styles.inputSection}>
-          <Text style={styles.sectionTitle}>Your Target Goal</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="e.g., Order food in Spanish by next month"
-            value={goal}
-            onChangeText={setGoal}
-            multiline
+    <SafeAreaView style={styles.container}>
+      {/* Progress bar */}
+      <View style={styles.progressContainer}>
+        {steps.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.progressBar,
+              index <= currentStep ? styles.progressBarActive : {}
+            ]}
           />
-        </View>
-        
-        <SelectionGroup
-          title="Why are you learning a language?"
-          options={motivations}
-          selected={motivation}
-          onSelect={setMotivation}
-        />
-
-        <SelectionGroup
-          title="What's your current level?"
-          options={proficiencyLevels}
-          selected={proficiencyLevel}
-          onSelect={setProficiencyLevel}
-        />
-
-        <SelectionGroup
-          title="How do you learn best?"
-          options={learningStyles}
-          selected={learningStyle}
-          onSelect={setLearningStyle}
-        />
-
-        <SelectionGroup
-          title="How often do you plan to study?"
-          options={studyPatterns}
-          selected={studyPattern}
-          onSelect={setStudyPattern}
-        />
-
-        <SelectionGroup
-          title="Choose your learning pace"
-          options={learningPaces}
-          selected={learningPace}
-          onSelect={setLearningPace}
-        />
-
-        <View style={styles.inputSection}>
-          <Text style={styles.sectionTitle}>Your Age (Optional)</Text>
-          <TextInput
-            style={[styles.textInput, styles.shortInput]}
-            placeholder="Age"
-            value={age}
-            onChangeText={setAge}
-            keyboardType="numeric"
-            maxLength={3}
-          />
-        </View>
-
-        <View style={styles.preferencesSection}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          <SwitchOption
-            title="Enable Notifications"
-            value={notifications}
-            onToggle={setNotifications}
-            description="Get important updates about your learning progress"
-          />
-          <SwitchOption
-            title="Daily Reminders"
-            value={dailyReminder}
-            onToggle={setDailyReminder}
-            description="Remind me to practice at my chosen time"
-          />
-          <SwitchOption
-            title="Speaking Practice"
-            value={speakingPractice}
-            onToggle={setSpeakingPractice}
-            description="Include speaking exercises in my lessons"
-          />
-        </View>
-
-        <TouchableOpacity 
-          style={[
-            styles.continueButton,
-            (motivation && studyPattern && learningPace) ? styles.continueButtonActive : {}
-          ]}
-          disabled={!motivation || !studyPattern || !learningPace}
-          onPress={handleSubmit}
-        >
-          <Text style={styles.continueButtonText}>Start Learning</Text>
-        </TouchableOpacity>
+        ))}
       </View>
-    </ScrollView>
+
+      <View style={styles.contentContainer}>
+        <Text style={styles.question}>{currentStepData.question}</Text>
+
+        <View style={styles.optionsContainer}>
+          {currentStepData.options.map((option) => (
+            <StepOption
+              key={option}
+              text={option}
+              isSelected={currentStepData.value === option}
+              onSelect={() => currentStepData.setValue(option)}
+            />
+          ))}
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.continueButton,
+          currentStepData.value ? styles.continueButtonActive : {}
+        ]}
+        disabled={!currentStepData.value}
+        onPress={handleNext}
+      >
+        <Text style={styles.continueButtonText}>
+          {currentStep === steps.length - 1 ? 'Start Learning' : 'Continue'}
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: '#F5F5DC',
-  },
   container: {
     flex: 1,
-    padding: 20,
-    alignItems: 'center', 
+    backgroundColor: '#F5F5DC',
   },
-  header: {
-    fontSize: 24,
+  progressContainer: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 4,
+  },
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#ddd',
+    borderRadius: 4,
+  },
+  progressBarActive: {
+    backgroundColor: '#333',
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  question: {
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 30,
+    color: '#333',
     textAlign: 'center',
-    width: '100%',
-  },
-  section: {
-    marginBottom: 25,
-    width: '100%', 
-  },
-  inputSection: {
-    marginBottom: 25,
-    width: '100%',
-  },
-  preferencesSection: {
-    marginBottom: 25,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 15,
-    width: '100%',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 15,
-    paddingHorizontal: 5,
-  },
-  textInput: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 12,
-    fontSize: 16,
-    width: '100%',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  shortInput: {
-    width: 120, 
   },
   optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    width: '100%',
+    gap: 12,
   },
   optionButton: {
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 10,
-    width: '48%', 
+    borderRadius: 16,
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -309,41 +197,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   optionText: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 18,
     color: '#333',
+    textAlign: 'center',
   },
   selectedOptionText: {
     color: 'white',
   },
-  switchContainer: {
-    marginBottom: 15,
-    width: '100%',
-  },
-  switchHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 5,
-    width: '100%',
-  },
-  switchTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  switchDescription: {
-    fontSize: 14,
-    color: '#666',
-    width: '100%',
-  },
   continueButton: {
     backgroundColor: '#999',
-    borderRadius: 25,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-    width: '100%', 
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
   },
   continueButtonActive: {
     backgroundColor: '#333',
@@ -352,5 +217,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
   }
 });
