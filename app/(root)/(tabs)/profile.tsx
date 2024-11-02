@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguageLearning } from './languagecontext';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Profile() {
