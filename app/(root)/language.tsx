@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
-
+import { router } from 'expo-router';
+import { useLanguageLearning } from './languagecontext';
+import { ScrollView, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 const languages = [
   "Mandarin Chinese", "Spanish", "English", "Hindi", "Arabic",
   "Bengali", "Portuguese", "Russian", "Japanese", "Punjabi",
@@ -13,7 +13,6 @@ const languages = [
   "Finnish", "Norwegian", "Slovak", "Croatian", "Bulgarian",
   "Lithuanian", "Slovenian", "Latvian", "Estonian", "Serbian"
 ];
-
 const getCountryCode = (language: string) => {
   const countryMap = {
     "Mandarin Chinese": "CN", "Spanish": "ES", "English": "GB", "Hindi": "IN", "Arabic": "SA",
@@ -31,12 +30,23 @@ const getCountryCode = (language: string) => {
 };
 
 export default function LanguageSelectionScreen() {
+  const { setSelectedLanguage } = useLanguageLearning();
+
+  const handleLanguageSelect = (language: string) => {
+    setSelectedLanguage(language);
+    router.push('/form');
+  };
+
   return (
     <ScrollView style={styles.scrollView}>
       <View style={styles.container}>
         <Text style={styles.header}>I want to learn...</Text>
         {languages.map((lang, index) => (
-          <TouchableOpacity key={index} style={styles.languageButton}>
+          <TouchableOpacity 
+            key={index} 
+            style={styles.languageButton}
+            onPress={() => handleLanguageSelect(lang)}
+          >
             <Image
               style={styles.flag}
               source={{ uri: `https://flagsapi.com/${getCountryCode(lang)}/flat/64.png` }}
@@ -52,7 +62,6 @@ export default function LanguageSelectionScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: '#F5F5DC', // Beige background

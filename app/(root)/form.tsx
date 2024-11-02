@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Switch } from 'react-native';
-
+import { router } from 'expo-router';
+import { useLanguageLearning } from './languagecontext'
 interface SelectionGroupProps {
   title: string;
   options: string[];
@@ -18,6 +19,7 @@ interface SwitchOptionProps {
 type PreferenceOption = string;
 
 export default function LearningPreferencesForm() {
+  const { selectedLanguage, setLearningPreferences } = useLanguageLearning();
   // Original state
   const [motivation, setMotivation] = useState<PreferenceOption>('');
   const [studyPattern, setStudyPattern] = useState<PreferenceOption>('');
@@ -68,7 +70,23 @@ export default function LearningPreferencesForm() {
     "Reading & Writing",
     "Interactive Practice"
   ];
-
+  const handleSubmit = () => {
+    const preferences = {
+      motivation,
+      studyPattern,
+      learningPace,
+      proficiencyLevel,
+      learningStyle,
+      age,
+      goal,
+      notifications,
+      dailyReminder,
+      speakingPractice,
+    };
+    
+    setLearningPreferences(preferences);
+    router.push('/dashboard');
+  };
   const SwitchOption: React.FC<SwitchOptionProps> = ({ title, value, onToggle, description }) => (
     <View style={styles.switchContainer}>
       <View style={styles.switchHeader}>
@@ -202,6 +220,7 @@ export default function LearningPreferencesForm() {
             (motivation && studyPattern && learningPace) ? styles.continueButtonActive : {}
           ]}
           disabled={!motivation || !studyPattern || !learningPace}
+          onPress={handleSubmit}
         >
           <Text style={styles.continueButtonText}>Start Learning</Text>
         </TouchableOpacity>
