@@ -103,7 +103,7 @@ export default function SignIn() {
         password
       );
       router.replace('/(root)/language');
-      login(userCredential.user.email || 'Guest');
+      login(userCredential.user);
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
       console.log('Login error:', err.code, err.message);
@@ -143,7 +143,7 @@ export default function SignIn() {
         password
       );
       router.replace('/(root)/language');
-      login(userCredential.user.email || 'Guest');
+      login(userCredential.user);
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
       console.log('Signup error:', err.code, err.message);
