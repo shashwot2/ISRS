@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
 import { ScrollView, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-
 const languages = [
   "Mandarin Chinese", "Spanish", "English", "Hindi", "Arabic",
   "Bengali", "Portuguese", "Russian", "Japanese", "Punjabi",
@@ -14,7 +13,6 @@ const languages = [
   "Finnish", "Norwegian", "Slovak", "Croatian", "Bulgarian",
   "Lithuanian", "Slovenian", "Latvian", "Estonian", "Serbian"
 ];
-
 const getCountryCode = (language: string) => {
   const countryMap = {
     "Mandarin Chinese": "CN", "Spanish": "ES", "English": "GB", "Hindi": "IN", "Arabic": "SA",
@@ -63,7 +61,6 @@ export default function LanguageSelectionScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: '#F5F5DC', // Keeping the beige background
