@@ -85,7 +85,7 @@ export default function LearningPreferencesForm() {
     };
     
     setLearningPreferences(preferences);
-    router.push('/dashboard');
+    router.push('/(root)/(tabs)/deckselection');
   };
   const SwitchOption: React.FC<SwitchOptionProps> = ({ title, value, onToggle, description }) => (
     <View style={styles.switchContainer}>
