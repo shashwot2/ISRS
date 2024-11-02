@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '../../context/auth';
+import { LanguageLearningProvider } from './languagecontext';
 import { Text } from 'react-native';
 
 export default function AppLayout() {
@@ -14,8 +15,10 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="language" options={{headerShown:false}}/>
-    </Stack>
+    <LanguageLearningProvider>
+      <Stack>
+        <Stack.Screen name="language" options={{ headerShown: false }} />
+      </Stack>
+    </LanguageLearningProvider>
   );
 }

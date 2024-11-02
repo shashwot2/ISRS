@@ -1,11 +1,15 @@
 import React from 'react';
+import { useLanguageLearning } from './languagecontext';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Dashboard() {
+    const { selectedLanguage, learningPreferences } = useLanguageLearning();
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>Hello, welcome!</Text>
-        </View>
+        <Text style={styles.text}>Hello, welcome!</Text>
+        <Text style={styles.text}>Learning {selectedLanguage}</Text>
+        <Text style={styles.text}>Motivation: {learningPreferences.motivation}</Text>
+    </View>
     );
 };
 
