@@ -13,14 +13,17 @@ import { initializeApp } from 'firebase/app';
 import { getFireBaseConfig } from '@/hooks/useFirebase';
 import { useAuth } from '../context/auth';
 import {
-  getAuth,
+  initializeAuth,
+  getReactNativePersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const app = initializeApp(getFireBaseConfig());
-const auth = getAuth(app);
-
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 export default function SignIn () {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
