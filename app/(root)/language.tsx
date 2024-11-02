@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
 import { ScrollView, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+
 const languages = [
   "Mandarin Chinese", "Spanish", "English", "Hindi", "Arabic",
   "Bengali", "Portuguese", "Russian", "Japanese", "Punjabi",
@@ -13,6 +14,7 @@ const languages = [
   "Finnish", "Norwegian", "Slovak", "Croatian", "Bulgarian",
   "Lithuanian", "Slovenian", "Latvian", "Estonian", "Serbian"
 ];
+
 const getCountryCode = (language: string) => {
   const countryMap = {
     "Mandarin Chinese": "CN", "Spanish": "ES", "English": "GB", "Hindi": "IN", "Arabic": "SA",
@@ -26,7 +28,7 @@ const getCountryCode = (language: string) => {
     "Finnish": "FI", "Norwegian": "NO", "Slovak": "SK", "Croatian": "HR", "Bulgarian": "BG",
     "Lithuanian": "LT", "Slovenian": "SI", "Latvian": "LV", "Estonian": "EE", "Serbian": "RS"
   };
-  return (countryMap as { [key: string]: string })[language] || "UN"; // Default to UN flag if not found
+  return (countryMap as { [key: string]: string })[language] || "UN";
 };
 
 export default function LanguageSelectionScreen() {
@@ -51,10 +53,9 @@ export default function LanguageSelectionScreen() {
               style={styles.flag}
               source={{ uri: `https://flagsapi.com/${getCountryCode(lang)}/flat/64.png` }}
             />
-            <View style={styles.languageNameContainer}>
-              <Text style={styles.languageName} numberOfLines={1} ellipsizeMode="tail">
-                {lang}
-              </Text>
+            <Text style={styles.languageName}>{lang}</Text>
+            <View style={styles.chevron}>
+              <Text style={styles.chevronText}>›</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -62,53 +63,56 @@ export default function LanguageSelectionScreen() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: '#F5F5DC', // Beige background
+    backgroundColor: '#F5F5DC', // Keeping the beige background
   },
   container: {
     flex: 1,
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
   },
   header: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginLeft: 10,
+    color: '#333',
   },
   languageButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 10,
-    width: '100%',
-  },
-  flag: {
-    width: 150, 
-    height: 80, 
-    borderRadius: 30,
-    marginRight: 10,
-  },
-  languageNameContainer: {
-    height: 80, 
-    flex: 1,
-    backgroundColor: '#333',
-    borderRadius: 30,
-    justifyContent: 'center',
-    paddingHorizontal: 15,
+    backgroundColor: 'white',
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  flag: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 16,
   },
   languageName: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 32,
-    textAlign: 'center',
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333',
   },
+  chevron: {
+    paddingHorizontal: 8,
+  },
+  chevronText: {
+    fontSize: 24,
+    color: '#CCCCCC',
+    fontWeight: '600',
+  }
 });
