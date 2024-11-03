@@ -84,7 +84,7 @@ export default function LearningPreferencesForm() {
         notifications
       };
       setLearningPreferences(preferences);
-      router.push('/profile');
+      router.push('/(root)/(tabs)/profile');
     }
   };
 

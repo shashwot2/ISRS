@@ -19,6 +19,7 @@ import {
   AuthErrorCodes,
 } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const app = initializeApp(getFireBaseConfig());
 const auth = initializeAuth(app, {
