@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Switch, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Switch, SafeAreaView, ActivityIndicator } from 'react-native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
@@ -23,6 +23,7 @@ export default function LearningPreferencesForm() {
   const [learningStyle, setLearningStyle] = useState<string>('');
   const [studyPattern, setStudyPattern] = useState<string>('');
   const [learningPace, setLearningPace] = useState<string>('');
+  const [loading, setLoading] = useState(false);
   const [goal, setGoal] = useState<string>('');
   const [notifications, setNotifications] = useState<boolean>(true);
 
@@ -88,12 +89,15 @@ export default function LearningPreferencesForm() {
         notifications,
       };
       setLearningPreferences(preferences);
+      setLoading(true); 
       try {
         await saveUserPreferences({ preferences });
         console.log('Preferences saved successfully.');
         router.push('/(root)/(tabs)/profile');
       } catch (error) {
         console.error('Error saving preferences:', error);
+      } finally {
+        setLoading(false); 
       }
     }
   };
@@ -153,6 +157,11 @@ export default function LearningPreferencesForm() {
           {currentStep === steps.length - 1 ? 'Start Learning' : 'Continue'}
         </Text>
       </TouchableOpacity>
+       {loading && (
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -228,5 +237,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
-  }
+  },
+    overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
