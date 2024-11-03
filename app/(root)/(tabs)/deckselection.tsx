@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFF',
     },
+
 });
 
 export default DeckSelection;

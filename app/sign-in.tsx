@@ -15,6 +15,8 @@ import {
   createUserWithEmailAndPassword,
   AuthErrorCodes,
 } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const getAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {

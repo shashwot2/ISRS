@@ -88,7 +88,6 @@ export default function LearningPreferencesForm() {
         notifications,
       };
       setLearningPreferences(preferences);
-
       try {
         await saveUserPreferences({ preferences });
         console.log('Preferences saved successfully.');
