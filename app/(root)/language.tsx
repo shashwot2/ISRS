@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Image, StyleSheet } from 'react-native';
 const functions = getFunctions();
 const checkUserPreferences = httpsCallable(functions, 'checkUserPreferences');
 const languages = [
@@ -35,11 +35,13 @@ const getCountryCode = (language: string) => {
 
 export default function LanguageSelectionScreen() {
   const { setSelectedLanguage } = useLanguageLearning();
-   const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-   const handleLanguageSelect = async (language: string) => {
+  const handleLanguageSelect = async (language: string) => {
+    if (loading) return; 
+    setLoading(true);
     setSelectedLanguage(language);
-      try {
+    try {
       const result = await checkUserPreferences();
       const data = result.data as { exists: boolean };
       const preferencesExist = data.exists;
@@ -47,11 +49,11 @@ export default function LanguageSelectionScreen() {
       if (preferencesExist) {
         router.push('/(root)/(tabs)/profile'); // Skip preferences form if they exist
       } else {
-        router.push('/form'); // Go to preferences form if none exist
+        router.push('/form'); 
       }
     } catch (error) {
       console.error('Error checking user preferences:', error);
-      router.push('/form'); // Fallback to preferences form on error
+      router.push('/form'); 
     } finally {
       setLoading(false);
     }
@@ -61,9 +63,14 @@ export default function LanguageSelectionScreen() {
     <ScrollView style={styles.scrollView}>
       <View style={styles.container}>
         <Text style={styles.header}>I want to learn...</Text>
+        {loading && (
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      )}
         {languages.map((lang, index) => (
-          <TouchableOpacity 
-            key={index} 
+          <TouchableOpacity
+            key={index}
             style={styles.languageButton}
             onPress={() => handleLanguageSelect(lang)}
           >
@@ -73,8 +80,13 @@ export default function LanguageSelectionScreen() {
             />
             <Text style={styles.languageName}>{lang}</Text>
             <View style={styles.chevron}>
-              <Text style={styles.chevronText}>›</Text>
+                <Text style={styles.chevronText}>›</Text>
             </View>
+            {loading && (
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      )}
           </TouchableOpacity>
         ))}
       </View>
@@ -131,5 +143,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#CCCCCC',
     fontWeight: '600',
-  }
+  },
+    overlay: {
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+  },
 });
