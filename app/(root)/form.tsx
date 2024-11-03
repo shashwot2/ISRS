@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Switch, SafeAreaView } from 'react-native';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
 
@@ -8,6 +9,9 @@ interface StepOptionProps {
   isSelected: boolean;
   onSelect: () => void;
 }
+
+const functions = getFunctions();
+const saveUserPreferences = httpsCallable(functions, 'saveOrUpdateUserPreferences');
 
 export default function LearningPreferencesForm() {
   const { selectedLanguage, setLearningPreferences } = useLanguageLearning();
@@ -72,7 +76,7 @@ export default function LearningPreferencesForm() {
     }
   ];
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -81,10 +85,17 @@ export default function LearningPreferencesForm() {
         proficiencyLevel,
         learningStyle,
         studyPattern,
-        notifications
+        notifications,
       };
       setLearningPreferences(preferences);
-      router.push('/(root)/(tabs)/profile');
+
+      try {
+        await saveUserPreferences({ preferences });
+        console.log('Preferences saved successfully.');
+        router.push('/(root)/(tabs)/profile');
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+      }
     }
   };
 

@@ -1,6 +1,10 @@
 import { router } from 'expo-router';
 import { useLanguageLearning } from './languagecontext';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import React, { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+const functions = getFunctions();
+const checkUserPreferences = httpsCallable(functions, 'checkUserPreferences');
 const languages = [
   "Mandarin Chinese", "Spanish", "English", "Hindi", "Arabic",
   "Bengali", "Portuguese", "Russian", "Japanese", "Punjabi",
@@ -31,10 +35,26 @@ const getCountryCode = (language: string) => {
 
 export default function LanguageSelectionScreen() {
   const { setSelectedLanguage } = useLanguageLearning();
+   const [loading, setLoading] = useState(false);
 
-  const handleLanguageSelect = (language: string) => {
+   const handleLanguageSelect = async (language: string) => {
     setSelectedLanguage(language);
-    router.push('/form');
+      try {
+      const result = await checkUserPreferences();
+      const data = result.data as { exists: boolean };
+      const preferencesExist = data.exists;
+
+      if (preferencesExist) {
+        router.push('/(root)/(tabs)/profile'); // Skip preferences form if they exist
+      } else {
+        router.push('/form'); // Go to preferences form if none exist
+      }
+    } catch (error) {
+      console.error('Error checking user preferences:', error);
+      router.push('/form'); // Fallback to preferences form on error
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

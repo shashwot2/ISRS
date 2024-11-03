@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { auth } from './firebaseConfig';
 import {
   View,
   Text,
@@ -8,23 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { initializeApp } from 'firebase/app';
-import { getFireBaseConfig } from '@/hooks/useFirebase';
 import { useAuth } from '../context/auth';
 import {
-  initializeAuth,
-  getReactNativePersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   AuthErrorCodes,
 } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const app = initializeApp(getFireBaseConfig());
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
 
 const getAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {

@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../app/firebaseConfig';
 import { User } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface UserInfo {
   uid: string;
@@ -45,6 +47,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeAuth();
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const userData: UserInfo = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          avatarStyle: 'avataaars',
+        };
+        setUser(userData);
+        AsyncStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        setUser(null);
+        AsyncStorage.removeItem('user');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (firebaseUser: User) => {
