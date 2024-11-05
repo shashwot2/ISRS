@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -10,14 +10,15 @@ interface ReviewProps {
 
 interface CardItem {
   id: string;
-  spanish: string;
-  english: string;
+  sentence: string;
+  answer: string;
 }
 
 const sampleCards: CardItem[] = [
-  { id: '1', spanish: 'Un pequeño zorro marrón saltó sobre el perro perezoso.', english: 'dog' },
-  { id: '2', spanish: 'El perro corre rápido por el parque verde.', english: 'dog' },
-  { id: '3', spanish: 'El pájaro vuela alto en el cielo azul.', english: 'bird' },
+  { id: '1', sentence: 'Un pequeño zorro marrón saltó sobre el perro perezoso.', answer: 'A small brown fox jumped over the lazy dog.' },
+  { id: '2', sentence: 'El perro corre rápido por el parque verde.', answer: 'The dog runs fast through the green park.' },
+  { id: '3', sentence: 'El pájaro vuela alto en el cielo azul.', answer: 'The bird flies high in the blue sky.' },
+  
 ];
 
 const Colors = {
@@ -39,10 +40,51 @@ const Colors = {
   },
 };
 
+const FlippableCard: React.FC<{ 
+  item: CardItem;
+  width: number;
+  height: number;
+}> = ({ item, width, height }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <Pressable 
+      style={[styles.card, { width, height }]}
+      onPress={() => setIsFlipped(!isFlipped)}
+    >
+      <MaterialIcons 
+        name="star-outline" 
+        size={24} 
+        color={Colors.dark.icon}
+        style={styles.starIcon}
+      />
+      <Text 
+        style={[styles.cardText, { color: Colors.dark.icon }]}
+        numberOfLines={6}
+        ellipsizeMode="tail"
+      >
+        {isFlipped ? item.answer : item.sentence}
+      </Text>
+      <View style={styles.bottomIcons}>
+        <MaterialIcons 
+          name="volume-up" 
+          size={24} 
+          color={Colors.dark.icon}
+        />
+        <MaterialIcons 
+          name="content-copy" 
+          size={24} 
+          color={Colors.dark.icon}
+        />
+      </View>
+    </Pressable>
+  );
+};
+
 const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   const { width: screenWidth } = Dimensions.get('window');
   const headerHeight = 100;
-  const cardSize = Math.min(screenWidth - 40, 400); // Square card with max size and margins
+  const cardSize = Math.min(screenWidth - 40, 400);
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.dark.background }]}>
@@ -54,29 +96,11 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
         <Swiper
           cards={sampleCards}
           renderCard={(card) => (
-            <View style={[styles.card, { width: cardSize, height: cardSize }]}>
-              <MaterialIcons 
-                name="star-outline" 
-                size={24} 
-                color={Colors.dark.icon}
-                style={styles.starIcon}
-              />
-              <Text style={[styles.spanishText, { color: Colors.dark.icon }]}>
-                {card.spanish}
-              </Text>
-              <View style={styles.bottomIcons}>
-                <MaterialIcons 
-                  name="volume-up" 
-                  size={24} 
-                  color={Colors.dark.icon}
-                />
-                <MaterialIcons 
-                  name="content-copy" 
-                  size={24} 
-                  color={Colors.dark.icon}
-                />
-              </View>
-            </View>
+            <FlippableCard 
+              item={card}
+              width={cardSize}
+              height={cardSize}
+            />
           )}
           cardIndex={0}
           backgroundColor={Colors.dark.background}
@@ -181,7 +205,7 @@ const styles = StyleSheet.create({
   starIcon: {
     alignSelf: 'flex-end',
   },
-  spanishText: {
+  cardText: {
     fontSize: 24,
     textAlign: 'left',
     lineHeight: 32,
