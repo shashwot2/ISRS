@@ -10,15 +10,104 @@ interface ReviewProps {
 
 interface CardItem {
   id: string;
-  sentence: string;
-  answer: string;
+  targetSentence: string;
+  targetWord: string;
+  answerSentence: string;
+  answerWord: string;
 }
 
 const sampleCards: CardItem[] = [
-  { id: '1', sentence: 'Un pequeño zorro marrón saltó sobre el perro perezoso.', answer: 'A small brown fox jumped over the lazy dog.' },
-  { id: '2', sentence: 'El perro corre rápido por el parque verde.', answer: 'The dog runs fast through the green park.' },
-  { id: '3', sentence: 'El pájaro vuela alto en el cielo azul.', answer: 'The bird flies high in the blue sky.' },
-  
+  {
+    id: '1',
+    targetSentence: 'Un pequeño zorro marrón saltó sobre el perro perezoso.',
+    targetWord: 'perro',
+    answerSentence: 'A small brown fox jumped over the lazy dog.',
+    answerWord: 'dog',
+  },
+  {
+    id: '2',
+    targetSentence: 'El gato negro duerme en la ventana.',
+    targetWord: 'gato',
+    answerSentence: 'The black cat sleeps in the window.',
+    answerWord: 'cat',
+  },
+  {
+    id: '3',
+    targetSentence: 'El pájaro azul vuela en el cielo.',
+    targetWord: 'pájaro',
+    answerSentence: 'The blue bird flies in the sky.',
+    answerWord: 'bird',
+  },
+{
+  id: '4',
+  targetSentence: 'La luna brilla en el cielo nocturno.',
+  targetWord: 'luna',
+  answerSentence: 'The moon shines in the night sky.',
+  answerWord: 'moon',
+},
+{
+  id: '5',
+  targetSentence: 'El sol se oculta detrás de las montañas.',
+  targetWord: 'sol',
+  answerSentence: 'The sun sets behind the mountains.',
+  answerWord: 'sun',
+},
+{
+  id: '6',
+  targetSentence: 'Las estrellas iluminan la noche.',
+  targetWord: 'estrellas',
+  answerSentence: 'The stars light up the night.',
+  answerWord: 'stars',
+},
+{
+  id: '7',
+  targetSentence: 'El río fluye hacia el mar.',
+  targetWord: 'río',
+  answerSentence: 'The river flows to the sea.',
+  answerWord: 'river',
+},
+{
+  id: '8',
+  targetSentence: 'La montaña es alta y majestuosa.',
+  targetWord: 'montaña',
+  answerSentence: 'The mountain is tall and majestic.',
+  answerWord: 'mountain',
+},
+{
+  id: '9',
+  targetSentence: 'El viento sopla fuerte en la colina.',
+  targetWord: 'viento',
+  answerSentence: 'The wind blows strong on the hill.',
+  answerWord: 'wind',
+},
+{
+  id: '10',
+  targetSentence: 'El bosque está lleno de árboles verdes.',
+  targetWord: 'bosque',
+  answerSentence: 'The forest is full of green trees.',
+  answerWord: 'forest',
+},
+{
+  id: '11',
+  targetSentence: 'La playa está cubierta de arena dorada.',
+  targetWord: 'playa',
+  answerSentence: 'The beach is covered with golden sand.',
+  answerWord: 'beach',
+},
+{
+  id: '12',
+  targetSentence: 'El lago refleja el cielo azul.',
+  targetWord: 'lago',
+  answerSentence: 'The lake reflects the blue sky.',
+  answerWord: 'lake',
+},
+{
+  id: '13',
+  targetSentence: 'El desierto es vasto y árido.',
+  targetWord: 'desierto',
+  answerSentence: 'The desert is vast and arid.',
+  answerWord: 'desert',
+}
 ];
 
 const Colors = {
@@ -40,42 +129,89 @@ const Colors = {
   },
 };
 
+const HighlightedText: React.FC<{
+  sentence: string;
+  word: string;
+  textColor: string;
+}> = ({ sentence, word, textColor }) => {
+  const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
+  
+  return (
+    <Text style={[styles.cardText, { color: textColor }]}>
+      {parts.map((part, index) => 
+        part.toLowerCase() === word.toLowerCase() ? (
+          <Text key={index} style={styles.highlightedWord}>
+            {part}
+          </Text>
+        ) : (
+          <Text key={index}>{part}</Text>
+        )
+      )}
+    </Text>
+  );
+};
+
 const FlippableCard: React.FC<{ 
   item: CardItem;
   width: number;
   height: number;
 }> = ({ item, width, height }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [isAudioActive, setIsAudioActive] = useState(false);
+  const [isCopyActive, setIsCopyActive] = useState(false);
+
+  const handleIconPress = (
+    e: any, 
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    e.stopPropagation();
+    setter(prev => !prev);
+  };
 
   return (
     <Pressable 
       style={[styles.card, { width, height }]}
       onPress={() => setIsFlipped(!isFlipped)}
     >
-      <MaterialIcons 
-        name="star-outline" 
-        size={24} 
-        color={Colors.dark.icon}
+      <Pressable
+        onPress={(e) => handleIconPress(e, setIsStarred)}
         style={styles.starIcon}
-      />
-      <Text 
-        style={[styles.cardText, { color: Colors.dark.icon }]}
-        numberOfLines={6}
-        ellipsizeMode="tail"
       >
-        {isFlipped ? item.answer : item.sentence}
-      </Text>
+        <MaterialIcons 
+          name={isStarred ? "star" : "star-outline"}
+          size={24} 
+          color={isStarred ? '#F7F0E0' : Colors.dark.icon}
+        />
+      </Pressable>
+
+      <View style={styles.textContainer}>
+        <HighlightedText
+          sentence={isFlipped ? item.answerSentence : item.targetSentence}
+          word={isFlipped ? item.answerWord : item.targetWord}
+          textColor={Colors.dark.icon}
+        />
+      </View>
+
       <View style={styles.bottomIcons}>
-        <MaterialIcons 
-          name="volume-up" 
-          size={24} 
-          color={Colors.dark.icon}
-        />
-        <MaterialIcons 
-          name="content-copy" 
-          size={24} 
-          color={Colors.dark.icon}
-        />
+        <Pressable
+          onPress={(e) => handleIconPress(e, setIsAudioActive)}
+        >
+          <MaterialIcons 
+            name="volume-up" 
+            size={24} 
+            color={isAudioActive ? '#F7F0E0' : Colors.dark.icon}
+          />
+        </Pressable>
+        <Pressable
+          onPress={(e) => handleIconPress(e, setIsCopyActive)}
+        >
+          <MaterialIcons 
+            name="content-copy" 
+            size={24} 
+            color={isCopyActive ? '#F7F0E0' : Colors.dark.icon}
+          />
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -205,12 +341,17 @@ const styles = StyleSheet.create({
   starIcon: {
     alignSelf: 'flex-end',
   },
+  textContainer: {
+    flex: 1,
+    paddingVertical: 20,
+  },
   cardText: {
     fontSize: 24,
     textAlign: 'left',
     lineHeight: 32,
-    flex: 1,
-    paddingVertical: 20,
+  },
+  highlightedWord: {
+    color: Colors.dark.tint,
   },
   bottomIcons: {
     flexDirection: 'row',
