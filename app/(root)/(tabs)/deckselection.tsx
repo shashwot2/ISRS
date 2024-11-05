@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
-import Review from '../../../components/review';  // Import the Review component
+import Review from '../../../components/ReviewPage';  // Import the Review component
 
 interface Deck {
     id: string;
