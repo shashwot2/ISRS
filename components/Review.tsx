@@ -1,114 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useAuth } from "../context/auth";
 
+const functions = getFunctions();
+const getCards = httpsCallable(functions, 'getCards');
+const addCard = httpsCallable(functions, 'addCard');
 interface ReviewProps {
   deckId: string;
   onBack: () => void;
 }
 
 interface CardItem {
-  id: string;
   targetSentence: string;
   targetWord: string;
   answerSentence: string;
   answerWord: string;
 }
-
-const sampleCards: CardItem[] = [
-  {
-    id: '1',
-    targetSentence: 'Un pequeño zorro marrón saltó sobre el perro perezoso.',
-    targetWord: 'perro',
-    answerSentence: 'A small brown fox jumped over the lazy dog.',
-    answerWord: 'dog',
-  },
-  {
-    id: '2',
-    targetSentence: 'El gato negro duerme en la ventana.',
-    targetWord: 'gato',
-    answerSentence: 'The black cat sleeps in the window.',
-    answerWord: 'cat',
-  },
-  {
-    id: '3',
-    targetSentence: 'El pájaro azul vuela en el cielo.',
-    targetWord: 'pájaro',
-    answerSentence: 'The blue bird flies in the sky.',
-    answerWord: 'bird',
-  },
-{
-  id: '4',
-  targetSentence: 'La luna brilla en el cielo nocturno.',
-  targetWord: 'luna',
-  answerSentence: 'The moon shines in the night sky.',
-  answerWord: 'moon',
-},
-{
-  id: '5',
-  targetSentence: 'El sol se oculta detrás de las montañas.',
-  targetWord: 'sol',
-  answerSentence: 'The sun sets behind the mountains.',
-  answerWord: 'sun',
-},
-{
-  id: '6',
-  targetSentence: 'Las estrellas iluminan la noche.',
-  targetWord: 'estrellas',
-  answerSentence: 'The stars light up the night.',
-  answerWord: 'stars',
-},
-{
-  id: '7',
-  targetSentence: 'El río fluye hacia el mar.',
-  targetWord: 'río',
-  answerSentence: 'The river flows to the sea.',
-  answerWord: 'river',
-},
-{
-  id: '8',
-  targetSentence: 'La montaña es alta y majestuosa.',
-  targetWord: 'montaña',
-  answerSentence: 'The mountain is tall and majestic.',
-  answerWord: 'mountain',
-},
-{
-  id: '9',
-  targetSentence: 'El viento sopla fuerte en la colina.',
-  targetWord: 'viento',
-  answerSentence: 'The wind blows strong on the hill.',
-  answerWord: 'wind',
-},
-{
-  id: '10',
-  targetSentence: 'El bosque está lleno de árboles verdes.',
-  targetWord: 'bosque',
-  answerSentence: 'The forest is full of green trees.',
-  answerWord: 'forest',
-},
-{
-  id: '11',
-  targetSentence: 'La playa está cubierta de arena dorada.',
-  targetWord: 'playa',
-  answerSentence: 'The beach is covered with golden sand.',
-  answerWord: 'beach',
-},
-{
-  id: '12',
-  targetSentence: 'El lago refleja el cielo azul.',
-  targetWord: 'lago',
-  answerSentence: 'The lake reflects the blue sky.',
-  answerWord: 'lake',
-},
-{
-  id: '13',
-  targetSentence: 'El desierto es vasto y árido.',
-  targetWord: 'desierto',
-  answerSentence: 'The desert is vast and arid.',
-  answerWord: 'desert',
-}
-];
 
 const Colors = {
   light: {
@@ -135,10 +45,10 @@ const HighlightedText: React.FC<{
   textColor: string;
 }> = ({ sentence, word, textColor }) => {
   const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
-  
+
   return (
     <Text style={[styles.cardText, { color: textColor }]}>
-      {parts.map((part, index) => 
+      {parts.map((part, index) =>
         part.toLowerCase() === word.toLowerCase() ? (
           <Text key={index} style={styles.highlightedWord}>
             {part}
@@ -221,83 +131,150 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   const { width: screenWidth } = Dimensions.get('window');
   const headerHeight = 100;
   const cardSize = Math.min(screenWidth - 40, 400);
+  const { user } = useAuth();
+  const [cards, setCards] = useState<CardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showInput, setShowInput] = useState(false);
+  const [newWord, setNewWord] = useState('');
+
+  const fetchCards = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+        const result = await getCards({ deckId });
+        const data = result.data as { cards: CardItem[] };
+        setCards(data.cards || []);
+        console.log('Fetched cards:', data.cards); // Debug log
+        console.log('Cards:', cards);
+    } catch (err: any) {
+        console.error('Error fetching cards:', err);
+        setError('Failed to load cards. Please try again later.');
+    } finally {
+        setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchCards();
+}, []);
+  const handleAddCard = async () => {
+    if (!newWord.trim()) return; // Avoid empty submissions
+    try {
+      const result = await addCard({
+        userId: user?.uid,
+        deckId,
+        answerWord: newWord, // Pass the new word
+        language: "Chinese",
+      });
+      console.log('Card added:', result);
+      setShowInput(false);
+      setNewWord('');
+      fetchCards();
+    } catch (err: any) {
+      
+      console.error('Error adding card:', err);
+      setError('Failed to add card. Please try again later.');
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.dark.background }]}>
       <View style={[styles.header, { height: headerHeight }]}>
-        <Text onPress={onBack} style={[styles.backButton, { color: Colors.dark.tint }]}>← Back</Text>
-        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId}</Text>
+        <Text onPress={onBack} style={[styles.backButton, { color: Colors.dark.tint }]}>
+          ← Back
+        </Text>
+        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId} </Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
+
+      {!showInput ? (
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowInput(true)}
+        >
           <Text style={styles.addButtonText}>+ Add Card</Text>
         </TouchableOpacity>
-      <View style={styles.swiperContainer}>
-        <Swiper
-          cards={sampleCards}
-          renderCard={(card) => (
-            <FlippableCard 
-              item={card}
-              width={cardSize}
-              height={cardSize}
-            />
-          )}
-          cardIndex={0}
-          backgroundColor={Colors.dark.background}
-          stackSize={3}
-          stackSeparation={15}
-          animateOverlayLabelsOpacity
-          animateCardOpacity
-          overlayLabels={{
-            left: {
-              title: 'CORRECT',
-              style: {
-                label: {
-                  backgroundColor: '#4CAF50',
-                  color: Colors.dark.text,
-                  fontSize: 24,
-                  borderRadius: 8,
-                  padding: 10,
+      ) : (
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter a word"
+            placeholderTextColor="#AAA"
+            value={newWord}
+            onChangeText={(text) => setNewWord(text)}
+          />
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={handleAddCard}
+            >
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowInput(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {loading ? (
+        <Text style={styles.addButtonText}>Loading...</Text>
+      ) : cards.length === 0 ? (
+        <Text style={styles.addButtonText}>No cards</Text>
+      ) : (
+        <View style={styles.swiperContainer}>
+          <Swiper
+            cards={cards}
+            renderCard={(card) => (
+              <FlippableCard item={card} width={cardSize} height={cardSize} />
+            )}
+            cardIndex={0}
+            backgroundColor={Colors.dark.background}
+            stackSize={3}
+            stackSeparation={15}
+            animateOverlayLabelsOpacity
+            animateCardOpacity
+            overlayLabels={{
+              left: {
+                title: 'CORRECT',
+                style: {
+                  label: {
+                    backgroundColor: '#4CAF50',
+                    color: Colors.dark.text,
+                    fontSize: 24,
+                    borderRadius: 8,
+                    padding: 10,
+                  },
                 },
-                wrapper: {
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  justifyContent: 'flex-start',
-                  marginTop: 20,
-                  marginLeft: -20,
-                }
-              }
-            },
-            right: {
-              title: 'INCORRECT',
-              style: {
-                label: {
-                  backgroundColor: '#FF3B30',
-                  color: Colors.dark.text,
-                  fontSize: 24,
-                  borderRadius: 8,
-                  padding: 10,
+              },
+              right: {
+                title: 'INCORRECT',
+                style: {
+                  label: {
+                    backgroundColor: '#FF3B30',
+                    color: Colors.dark.text,
+                    fontSize: 24,
+                    borderRadius: 8,
+                    padding: 10,
+                  },
                 },
-                wrapper: {
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
-                  marginTop: 20,
-                  marginLeft: 20,
-                }
-              }
-            }
-          }}
-          verticalSwipe={false}
-          onSwipedLeft={(cardIndex) => console.log('Correct on card:', cardIndex)}
-          onSwipedRight={(cardIndex) => console.log('Incorrect on card:', cardIndex)}
-          onSwipedAll={() => console.log('All cards completed')}
-          containerStyle={styles.swiperContainer}
-          cardStyle={styles.cardContainer}
-        />
-      </View>
+              },
+            }}
+            verticalSwipe={false}
+            onSwipedLeft={(cardIndex) => console.log('Correct on card:', cardIndex)}
+            onSwipedRight={(cardIndex) => console.log('Incorrect on card:', cardIndex)}
+            onSwipedAll={() => console.log('All cards completed')}
+            containerStyle={styles.swiperContainer}
+            cardStyle={styles.cardContainer}
+          />
+        </View>
+      )}
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -370,6 +347,38 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFF',
     fontWeight: 'bold',
+  },
+  inputContainer: {
+    padding: 16,
+    backgroundColor: '#333',
+    borderRadius: 8,
+  },
+  input: {
+    backgroundColor: '#555',
+    color: '#FFF',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+  },
+  confirmButtonText: {
+    color: '#FFF',
+  },
+  cancelButton: {
+    backgroundColor: '#FF3B30',
+    padding: 10,
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: '#FFF',
   },
 });
 

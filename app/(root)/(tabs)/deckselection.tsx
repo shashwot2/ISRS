@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, TextInp
 import Review from '../../../components/Review';
 import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { getAuth } from 'firebase/auth';
 
 const functions = getFunctions();
 const getDecks = httpsCallable(functions, 'getDecks');
@@ -19,7 +18,6 @@ const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, on
     return (
         <TouchableOpacity onPress={onPress} style={styles.deck}>
             <Text style={styles.deckIDText}>{deck.name}</Text>
-            <Text style={styles.deckText}>{}</Text>
             <Text style={styles.deckText}>{deck.description}</Text>
         </TouchableOpacity>
     );
@@ -66,7 +64,7 @@ const DeckSelection: React.FC = () => {
         const newDeckData = {
             userId: user?.uid, // Ensure user is logged in
             deckName: newDeckName, // Required
-            description: "Default description", // Required
+            description: newDeckDiscription || "default description", // Optional, default to "default description"
             tags: ["default"], // Must be an array
             isShared: false, // Optional, default to false
             sharedWith: [], // Optional, default to empty array
