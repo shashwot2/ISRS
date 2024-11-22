@@ -12,12 +12,15 @@ const addDeck = httpsCallable(functions, 'addDeck');
 interface Deck {
     id: string;
     name: string;
+    description?: string;
 }
 
 const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, onPress }) => {
     return (
         <TouchableOpacity onPress={onPress} style={styles.deck}>
-            <Text style={styles.deckText}>{deck.name}</Text>
+            <Text style={styles.deckIDText}>{deck.name}</Text>
+            <Text style={styles.deckText}>{}</Text>
+            <Text style={styles.deckText}>{deck.description}</Text>
         </TouchableOpacity>
     );
 };
@@ -30,6 +33,7 @@ const DeckSelection: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newDeckName, setNewDeckName] = useState<string>('');
+    const [newDeckDiscription, setNewDeckDiscription] = useState<string>('');
 
     const fetchDecks = async () => {
         setLoading(true);
@@ -42,6 +46,7 @@ const DeckSelection: React.FC = () => {
                 data.map((deck) => ({
                     id: deck.id,
                     name: deck.deckName,
+                    description: deck.description,
                 }))
             );
         } catch (err: any) {
@@ -66,6 +71,7 @@ const DeckSelection: React.FC = () => {
             isShared: false, // Optional, default to false
             sharedWith: [], // Optional, default to empty array
             isAiGenerated: false, // Optional, default to false
+            cards: [], // Optional, default to empty array
         };
     
         console.log("Payload to addDeck:", newDeckData);
@@ -74,6 +80,7 @@ const DeckSelection: React.FC = () => {
             const result = await addDeck(newDeckData);
             console.log("Deck added:", result.data); // Success response
             setNewDeckName('');
+            setNewDeckDiscription('');
             setIsModalVisible(false);
             fetchDecks(); // Refresh the deck list
         } catch (err: any) {
@@ -128,12 +135,20 @@ const DeckSelection: React.FC = () => {
                 animationType="slide"
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                    <View style={styles.modalContent}>\
+                        <Text>Enter Deck Name</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Deck Name"
                             value={newDeckName}
                             onChangeText={setNewDeckName}
+                        />
+                        <Text>Deck Description</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Deck Description"
+                            value={newDeckDiscription}
+                            onChangeText={setNewDeckDiscription}
                         />
                         <Button title="Confirm" onPress={handleAddDeck} />
                         <Button title="Cancel" color="red" onPress={() => setIsModalVisible(false)} />
@@ -170,9 +185,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#88C0D0',
         borderRadius: 10,
     },
-    deckText: {
+    deckIDText: {
         fontSize: 20,
         fontWeight: 'bold',
+        color: '#FFF',
+    },
+    deckText: {
+        fontSize: 16,
         color: '#FFF',
     },
     addButton: {
