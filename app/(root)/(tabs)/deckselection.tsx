@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
-import Review from '../../../components/Review';  // Import the Review component
-import { useAuth } from "../../../context/auth"; // Import the useAuth hook
+import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, TextInput, Modal, Button } from 'react-native';
+import Review from '../../../components/Review';
+import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth } from 'firebase/auth';
+
 const functions = getFunctions();
 const getDecks = httpsCallable(functions, 'getDecks');
+const addDeck = httpsCallable(functions, 'addDeck');
+
 interface Deck {
     id: string;
     name: string;
 }
-
-const decks: Deck[] = [
-    { id: '1', name: 'Deck 1' },
-    { id: '2', name: 'Deck 2' },
-    { id: '3', name: 'Deck 3' },
-];
 
 const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, onPress }) => {
     return (
@@ -26,27 +23,25 @@ const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, on
 };
 
 const DeckSelection: React.FC = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user } = useAuth();
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
-    const [decks, setDecks] = useState<Deck[]>([]); // State to store fetched decks
-    const [loading, setLoading] = useState<boolean>(true); // Loading state
-    const [error, setError] = useState<string | null>(null); // Error state
-      const fetchDecks = async () => {
+    const [decks, setDecks] = useState<Deck[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [newDeckName, setNewDeckName] = useState<string>('');
+
+    const fetchDecks = async () => {
         setLoading(true);
         setError(null);
 
         try {
-
-            const result = await getDecks(); 
-            console.log("Decks:", result);
+            const result = await getDecks();
             const data = result.data as any[];
-
-            // Process the returned decks
             setDecks(
                 data.map((deck) => ({
                     id: deck.id,
                     name: deck.deckName,
-                    cards: deck.cards, // Optional: Include cards if your function returns them
                 }))
             );
         } catch (err: any) {
@@ -57,33 +52,94 @@ const DeckSelection: React.FC = () => {
         }
     };
 
+    const handleAddDeck = async () => {
+        if (!newDeckName.trim()) {
+            alert("Deck name cannot be empty.");
+            return;
+        }
+    
+        const newDeckData = {
+            userId: user?.uid, // Ensure user is logged in
+            deckName: newDeckName, // Required
+            description: "Default description", // Required
+            tags: ["default"], // Must be an array
+            isShared: false, // Optional, default to false
+            sharedWith: [], // Optional, default to empty array
+            isAiGenerated: false, // Optional, default to false
+        };
+    
+        console.log("Payload to addDeck:", newDeckData);
+    
+        try {
+            const result = await addDeck(newDeckData);
+            console.log("Deck added:", result.data); // Success response
+            setNewDeckName('');
+            setIsModalVisible(false);
+            fetchDecks(); // Refresh the deck list
+        } catch (err: any) {
+            console.error("Error adding deck:", err);
+            alert("Failed to add deck. Please try again.");
+        }
+    };
     useEffect(() => {
-        fetchDecks(); // Fetch decks on component mount
+        fetchDecks();
     }, []);
-    // If a deck is selected, show the Review screen
+
     if (selectedDeckId) {
         return <Review deckId={selectedDeckId} onBack={() => setSelectedDeckId(null)} />;
     }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.headerText}></Text>
-            <Text style={styles.headerText}></Text>
             <Text style={styles.headerText}>Deck Selection</Text>
-            <FlatList
-                data={decks}
-                renderItem={({ item }) => (
-                    <DeckComponent 
-                        deck={item} 
-                        onPress={() => setSelectedDeckId(item.id)} 
-                    />
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.deckList}
-            />
+            {loading ? (
+                <Text>Loading...</Text>
+            ) : error ? (
+                <Text>Error: {error}</Text>
+            ) : (
+                <FlatList
+                    data={decks}
+                    renderItem={({ item }) => (
+                        <DeckComponent 
+                            deck={item} 
+                            onPress={() => setSelectedDeckId(item.id)} 
+                        />
+                    )}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.deckList}
+                />
+            )}
+
+            {/* Add Deck Button */}
+            <TouchableOpacity 
+                style={styles.addButton} 
+                onPress={() => setIsModalVisible(true)}
+            >
+                <Text style={styles.addButtonText}>Add Deck</Text>
+            </TouchableOpacity>
+
+            {/* Modal for Input */}
+            <Modal
+                transparent={true}
+                visible={isModalVisible}
+                animationType="slide"
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter Deck Name"
+                            value={newDeckName}
+                            onChangeText={setNewDeckName}
+                        />
+                        <Button title="Confirm" onPress={handleAddDeck} />
+                        <Button title="Cancel" color="red" onPress={() => setIsModalVisible(false)} />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -119,7 +175,38 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFF',
     },
-
+    addButton: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: '#5A9',
+        borderRadius: 5,
+    },
+    addButtonText: {
+        fontSize: 18,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    input: {
+        width: '100%',
+        padding: 10,
+        borderColor: '#CCC',
+        borderWidth: 1,
+        marginBottom: 10,
+        borderRadius: 5,
+    },
 });
 
 export default DeckSelection;
