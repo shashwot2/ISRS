@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
 import Review from '../../../components/Review';  // Import the Review component
-
+import { useAuth } from "../../../context/auth"; // Import the useAuth hook
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from 'firebase/auth';
+const functions = getFunctions();
+const getDecks = httpsCallable(functions, 'getDecks');
 interface Deck {
     id: string;
     name: string;
@@ -22,8 +26,40 @@ const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, on
 };
 
 const DeckSelection: React.FC = () => {
+    const { user, loading: authLoading } = useAuth();
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
+    const [decks, setDecks] = useState<Deck[]>([]); // State to store fetched decks
+    const [loading, setLoading] = useState<boolean>(true); // Loading state
+    const [error, setError] = useState<string | null>(null); // Error state
+      const fetchDecks = async () => {
+        setLoading(true);
+        setError(null);
 
+        try {
+
+            const result = await getDecks(); 
+            console.log("Decks:", result);
+            const data = result.data as any[];
+
+            // Process the returned decks
+            setDecks(
+                data.map((deck) => ({
+                    id: deck.id,
+                    name: deck.deckName,
+                    cards: deck.cards, // Optional: Include cards if your function returns them
+                }))
+            );
+        } catch (err: any) {
+            console.error("Error fetching decks:", err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDecks(); // Fetch decks on component mount
+    }, []);
     // If a deck is selected, show the Review screen
     if (selectedDeckId) {
         return <Review deckId={selectedDeckId} onBack={() => setSelectedDeckId(null)} />;
