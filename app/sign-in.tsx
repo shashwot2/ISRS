@@ -17,7 +17,18 @@ import {
 } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { httpsCallable } from "firebase/functions";
+import { functions } from './firebaseConfig';
 
+const initializeDeck = async () => {
+  try {
+    const initDeck = httpsCallable(functions, "initDeck");
+    const result = await initDeck();
+    console.log("Deck initialized:", result.data);
+  } catch (error) {
+    console.error("Error initializing deck:", error);
+  }
+};
 const getAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {
     // Sign In Errors
@@ -100,8 +111,8 @@ export default function SignIn () {
         email,
         password
       );
-      router.replace('/(root)/language');
       login(userCredential.user);
+      router.replace('/(root)/language');
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
       console.log('Login error:', err.code, err.message);
@@ -140,8 +151,9 @@ export default function SignIn () {
         email,
         password
       );
-      router.replace('/(root)/language');
       login(userCredential.user);
+      initializeDeck();
+      router.replace('/(root)/language');
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
       console.log('Signup error:', err.code, err.message);
