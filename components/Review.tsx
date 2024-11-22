@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -228,6 +228,9 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
         <Text onPress={onBack} style={[styles.backButton, { color: Colors.dark.tint }]}>← Back</Text>
         <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId}</Text>
       </View>
+      <TouchableOpacity style={styles.addButton}>
+          <Text style={styles.addButtonText}>+ Add Card</Text>
+        </TouchableOpacity>
       <View style={styles.swiperContainer}>
         <Swiper
           cards={sampleCards}
@@ -357,6 +360,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     gap: 16,
+  },
+  addButton: {
+    padding: 10,
+    backgroundColor: '#5A9',
+    borderRadius: 5,
+  },
+  addButtonText: {
+    fontSize: 18,
+    color: '#FFF',
+    fontWeight: 'bold',
   },
 });
 
