@@ -8,16 +8,27 @@ import { useAuth } from "../context/auth";
 const functions = getFunctions();
 const getCards = httpsCallable(functions, 'getCards');
 const addCard = httpsCallable(functions, 'addCard');
+const saveDeckProgress = httpsCallable(functions, 'saveDeckProgress');
+const getDeckProgress = httpsCallable(functions, 'getDeckProgress');
 interface ReviewProps {
   deckId: string;
   onBack: () => void;
 }
 
 interface CardItem {
+  id?: string;
   targetSentence: string;
   targetWord: string;
   answerSentence: string;
   answerWord: string;
+}
+
+interface ProgressStats {
+  total: number;
+  correct: number;
+  incorrect: number;
+  remaining: number;
+  percentage: number;
 }
 
 const Colors = {
@@ -137,21 +148,95 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [showInput, setShowInput] = useState(false);
   const [newWord, setNewWord] = useState('');
+  const [progress, setProgress] = useState<ProgressStats>({
+    total: 0,
+    correct: 0,
+    incorrect: 0,
+    remaining: 0,
+    percentage: 0
+  });
+  const [sessionResults, setSessionResults] = useState<{
+    cardId: string;
+    correct: boolean;
+  }[]>([]);
 
-  const fetchCards = async () => {
+  const fetchProgress = async () => {
+    try {
+      const result = await getDeckProgress({ deckId });
+      const progressData = result.data.progress;
+      
+      if (progressData && progressData.results) {
+        // Count unique correct cards
+        const uniqueCorrectCards = new Set(
+          progressData.results
+            .filter((result: any) => result.correct)
+            .map((result: any) => result.cardId)
+        );
+
+        setProgress({
+          total: cards.length,
+          correct: uniqueCorrectCards.size,
+          incorrect: cards.length - uniqueCorrectCards.size,
+          remaining: cards.length - uniqueCorrectCards.size,
+          percentage: Math.round((uniqueCorrectCards.size / cards.length) * 100)
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching progress:', err);
+    }
+  };
+   const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+    const card = cards[cardIndex];
+    if (!card.id) return;
+
+    try {
+      // Save progress to backend
+      await saveDeckProgress({
+        deckId,
+        cardId: card.id,
+        correct: isCorrect
+      });
+
+      // Update local session results
+      setSessionResults(prev => [...prev, {
+        cardId: card.id!,
+        correct: isCorrect
+      }]);
+
+      // Update progress stats
+      setProgress(prev => {
+        const newCorrect = isCorrect ? prev.correct + 1 : prev.correct;
+        const newIncorrect = !isCorrect ? prev.incorrect + 1 : prev.incorrect;
+        return {
+          ...prev,
+          correct: newCorrect,
+          incorrect: newIncorrect,
+          remaining: prev.total - (newCorrect + newIncorrect),
+          percentage: Math.round((newCorrect / prev.total) * 100)
+        };
+      });
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    }
+  };
+   const fetchCards = async () => {
     setLoading(true);
     setError(null);
     try {
-        const result = await getCards({ deckId });
-        const data = result.data as { cards: CardItem[] };
-        setCards(data.cards || []);
-        console.log('Fetched cards:', data.cards); // Debug log
-        console.log('Cards:', cards);
+      const result = await getCards({ deckId });
+      const data = result.data as { cards: CardItem[] };
+      setCards(data.cards || []);
+      setProgress(prev => ({
+        ...prev,
+        total: data.cards.length,
+        remaining: data.cards.length
+      }));
+      await fetchProgress(); // Fetch existing progress after cards are loaded
     } catch (err: any) {
-        console.error('Error fetching cards:', err);
-        setError('Failed to load cards. Please try again later.');
+      console.error('Error fetching cards:', err);
+      setError('Failed to load cards. Please try again later.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -183,9 +268,20 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
         <Text onPress={onBack} style={[styles.backButton, { color: Colors.dark.tint }]}>
           ← Back
         </Text>
-        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId} </Text>
+        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId}</Text>
       </View>
 
+      {/* Progress Display */}
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          Progress: {progress.percentage}% Complete
+        </Text>
+        <Text style={styles.progressDetails}>
+          Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
+        </Text>
+      </View>
+
+      {/* Keep existing Add Card UI */}
       {!showInput ? (
         <TouchableOpacity
           style={styles.addButton}
@@ -200,7 +296,7 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
             placeholder="Enter a word"
             placeholderTextColor="#AAA"
             value={newWord}
-            onChangeText={(text) => setNewWord(text)}
+            onChangeText={setNewWord}
           />
           <View style={styles.buttonRow}>
             <TouchableOpacity
@@ -263,9 +359,12 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
               },
             }}
             verticalSwipe={false}
-            onSwipedLeft={(cardIndex) => console.log('Correct on card:', cardIndex)}
-            onSwipedRight={(cardIndex) => console.log('Incorrect on card:', cardIndex)}
-            onSwipedAll={() => console.log('All cards completed')}
+            onSwipedLeft={(cardIndex) => handleSwipe(cardIndex, true)}
+            onSwipedRight={(cardIndex) => handleSwipe(cardIndex, false)}
+            onSwipedAll={() => {
+              console.log('Session complete');
+              console.log('Session results:', sessionResults);
+            }}
             containerStyle={styles.swiperContainer}
             cardStyle={styles.cardContainer}
           />
@@ -275,8 +374,26 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
+  progressContainer: {
+    padding: 16,
+    backgroundColor: '#2D2D2D',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+  },
+  progressText: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  progressDetails: {
+    color: Colors.dark.text,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   container: {
     flex: 1,
   },
