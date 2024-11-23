@@ -18,10 +18,19 @@ interface ReviewProps {
 
 interface CardItem {
   id?: string;
+  id?: string;
   targetSentence: string;
   targetWord: string;
   answerSentence: string;
   answerWord: string;
+}
+
+interface ProgressStats {
+  total: number;
+  correct: number;
+  incorrect: number;
+  remaining: number;
+  percentage: number;
 }
 
 interface ProgressStats {
@@ -164,10 +173,78 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
     correct: boolean;
   }[]>([]);
 
-  const fetchCards = async () => {
+  const fetchProgress = async () => {
+    try {
+      const result = await getDeckProgress({ deckId });
+      const progressData = result.data.progress;
+      
+      if (progressData && progressData.results) {
+        // Count unique correct cards
+        const uniqueCorrectCards = new Set(
+          progressData.results
+            .filter((result: any) => result.correct)
+            .map((result: any) => result.cardId)
+        );
+
+        setProgress({
+          total: cards.length,
+          correct: uniqueCorrectCards.size,
+          incorrect: cards.length - uniqueCorrectCards.size,
+          remaining: cards.length - uniqueCorrectCards.size,
+          percentage: Math.round((uniqueCorrectCards.size / cards.length) * 100)
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching progress:', err);
+    }
+  };
+   const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+    const card = cards[cardIndex];
+    if (!card.id) return;
+
+    try {
+      // Save progress to backend
+      await saveDeckProgress({
+        deckId,
+        cardId: card.id,
+        correct: isCorrect
+      });
+
+      // Update local session results
+      setSessionResults(prev => [...prev, {
+        cardId: card.id!,
+        correct: isCorrect
+      }]);
+
+      // Update progress stats
+      setProgress(prev => {
+        const newCorrect = isCorrect ? prev.correct + 1 : prev.correct;
+        const newIncorrect = !isCorrect ? prev.incorrect + 1 : prev.incorrect;
+        return {
+          ...prev,
+          correct: newCorrect,
+          incorrect: newIncorrect,
+          remaining: prev.total - (newCorrect + newIncorrect),
+          percentage: Math.round((newCorrect / prev.total) * 100)
+        };
+      });
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    }
+  };
+   const fetchCards = async () => {
     setLoading(true);
     setError(null);
     try {
+      const result = await getCards({ deckId });
+      const data = result.data as { cards: CardItem[] };
+      setCards(data.cards || []);
+      setProgress(prev => ({
+        ...prev,
+        total: data.cards.length,
+        remaining: data.cards.length
+      }));
+      await fetchProgress(); // Fetch existing progress after cards are loaded
       // First fetch the cards
       const result = await getCards({ deckId });
       const data = result.data as { cards: CardItem[] };
@@ -333,6 +410,17 @@ const handleAddWord = async () => {
         <Text style={styles.progressDetails}>
           Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
         </Text>
+        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId}</Text>
+      </View>
+
+      {/* Progress Display */}
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          Progress: {progress.percentage}% Complete
+        </Text>
+        <Text style={styles.progressDetails}>
+          Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
+        </Text>
       </View>
 
       {/* Progress Display */}
@@ -449,6 +537,12 @@ const handleAddWord = async () => {
               console.log('Session complete');
               console.log('Session results:', sessionResults);
             }}
+            onSwipedLeft={(cardIndex) => handleSwipe(cardIndex, true)}
+            onSwipedRight={(cardIndex) => handleSwipe(cardIndex, false)}
+            onSwipedAll={() => {
+              console.log('Session complete');
+              console.log('Session results:', sessionResults);
+            }}
             containerStyle={styles.swiperContainer}
             cardStyle={styles.cardContainer}
           />
@@ -472,6 +566,25 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginTop: 8,
     fontSize: 14,
+  },
+  progressDetails: {
+    color: Colors.dark.text,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  progressContainer: {
+    padding: 16,
+    backgroundColor: '#2D2D2D',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+  },
+  progressText: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   progressDetails: {
     color: Colors.dark.text,
