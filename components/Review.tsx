@@ -534,6 +534,17 @@ const handleAddWord = async () => {
         </Text>
       </View>
 
+      {/* Progress Display */}
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          Progress: {progress.percentage}% Complete
+        </Text>
+        <Text style={styles.progressDetails}>
+          Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
+        </Text>
+      </View>
+
+      {/* Keep existing Add Card UI */}
       {!showInput ? (
         <TouchableOpacity
           style={styles.addButton}
