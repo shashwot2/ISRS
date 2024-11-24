@@ -401,8 +401,49 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
     }
   };
 useEffect(() => {
+useEffect(() => {
     fetchCards();
 }, []);
+const handleAddWord = async () => {
+  if (!newWord.trim() || !selectedLanguage) return;
+  
+  setGeneratingCards(true);
+  setGenerationProgress(0);
+  
+  try {
+    // Generate multiple cards for the same word
+    const result = await addCard({
+      userId: user?.uid,
+      deckId,
+      answerWord: newWord,
+      language: selectedLanguage,
+      preferences: {
+        proficiencyLevel: learningPreferences.proficiencyLevel,
+        learningStyle: learningPreferences.learningStyle,
+        generateRelated: true // Flag to generate related cards
+      }
+    });
+    
+    console.log('Cards added:', result);
+    setShowInput(false);
+    setNewWord('');
+    fetchCards();
+    
+    Alert.alert(
+      'Success',
+      'Generated multiple practice cards for your word!',
+      [{ text: 'OK' }]
+    );
+  } catch (err: any) {
+    console.error('Error adding cards:', err);
+    Alert.alert(
+      'Error',
+      'Failed to generate cards. Please try again.'
+    );
+  } finally {
+    setGeneratingCards(false);
+  }
+};
 const handleAddWord = async () => {
   if (!newWord.trim() || !selectedLanguage) return;
   
@@ -483,7 +524,16 @@ const handleAddWord = async () => {
         </Text>
       </View>
 
-      {/* Keep existing Add Card UI */}
+      {/* Progress Display */}
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          Progress: {progress.percentage}% Complete
+        </Text>
+        <Text style={styles.progressDetails}>
+          Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
+        </Text>
+      </View>
+
       {!showInput ? (
         <TouchableOpacity
           style={styles.addButton}
@@ -513,8 +563,24 @@ const handleAddWord = async () => {
             </View>
           )}
 
+          
+          {generatingCards && (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator color="#FFF" />
+              <Text style={styles.progressText}>
+                Generating your practice cards...
+              </Text>
+            </View>
+          )}
+
           <View style={styles.buttonRow}>
             <TouchableOpacity
+              style={[
+                styles.confirmButton,
+                generatingCards && styles.disabledButton
+              ]}
+              onPress={handleAddWord}
+              disabled={generatingCards}
               style={[
                 styles.confirmButton,
                 generatingCards && styles.disabledButton
@@ -624,17 +690,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   progressContainer: {
-    padding: 16,
-    backgroundColor: '#2D2D2D',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
   },
   progressText: {
-    color: Colors.dark.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#FFF',
+    marginTop: 8,
+    fontSize: 14,
   },
   progressDetails: {
     color: Colors.dark.text,
