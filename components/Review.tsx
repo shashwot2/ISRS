@@ -173,35 +173,81 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
     correct: boolean;
   }[]>([]);
 
-  const fetchProgress = async () => {
+  const fetchCards = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const result = await getDeckProgress({ deckId });
-      const progressData = result.data.progress;
-      
-      if (progressData && progressData.results) {
-        // Count unique correct cards
-        const uniqueCorrectCards = new Set(
-          progressData.results
-            .filter((result: any) => result.correct)
-            .map((result: any) => result.cardId)
-        );
-
+      // First fetch the cards
+      const result = await getCards({ deckId });
+      const data = result.data as { cards: CardItem[] };
+      setCards(data.cards || []);
+  
+      // Then fetch progress data
+      const progressResult = await getDeckProgress({ deckId });
+      console.log("PRogress result", progressResult);
+      const progressData = progressResult.data.progress;
+  
+      if (progressData?.results && data.cards.length > 0) {
+        // Get the most recent result for each card
+        const cardResults = new Map();
+        progressData.results.forEach((result: any) => {
+          cardResults.set(result.cardId, {
+            correct: result.correct,
+            timestamp: result.timestamp
+          });
+        });
+  
+        // Count correct and incorrect based on most recent attempts
+        let correctCount = 0;
+        let incorrectCount = 0;
+  
+        data.cards.forEach(card => {
+          if (card.id) {
+            const result = cardResults.get(card.id);
+            if (result) {
+              if (result.correct) {
+                correctCount++;
+              } else {
+                incorrectCount++;
+              }
+            }
+          }
+        });
+  
         setProgress({
-          total: cards.length,
-          correct: uniqueCorrectCards.size,
-          incorrect: cards.length - uniqueCorrectCards.size,
-          remaining: cards.length - uniqueCorrectCards.size,
-          percentage: Math.round((uniqueCorrectCards.size / cards.length) * 100)
+          total: data.cards.length,
+          correct: correctCount,
+          incorrect: incorrectCount,
+          remaining: data.cards.length - (correctCount + incorrectCount),
+          percentage: Math.round((correctCount / data.cards.length) * 100)
+        });
+      } else {
+        // Initialize progress with zero completions
+        setProgress({
+          total: data.cards.length,
+          correct: 0,
+          incorrect: 0,
+          remaining: data.cards.length,
+          percentage: 0
         });
       }
-    } catch (err) {
-      console.error('Error fetching progress:', err);
+    } catch (err: any) {
+      console.error('Error fetching cards:', err);
+      setError('Failed to load cards. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
-   const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+  
+  // Update handleSwipe to handle progress updates more accurately
+  const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
     const card = cards[cardIndex];
+    console.log("card index", cardIndex)
+    console.log("card" , card)
+    console.log("cardID", card.id)
+    console.log("Cards:", cards)
     if (!card.id) return;
-
+  
     try {
       // Save progress to backend
       await saveDeckProgress({
@@ -209,25 +255,29 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
         cardId: card.id,
         correct: isCorrect
       });
-
+  
       // Update local session results
       setSessionResults(prev => [...prev, {
         cardId: card.id!,
         correct: isCorrect
       }]);
-
-      // Update progress stats
-      setProgress(prev => {
-        const newCorrect = isCorrect ? prev.correct + 1 : prev.correct;
-        const newIncorrect = !isCorrect ? prev.incorrect + 1 : prev.incorrect;
-        return {
-          ...prev,
-          correct: newCorrect,
-          incorrect: newIncorrect,
-          remaining: prev.total - (newCorrect + newIncorrect),
-          percentage: Math.round((newCorrect / prev.total) * 100)
-        };
-      });
+  
+      // Keep track of which cards have been answered this session
+      const answeredThisSession = new Set(sessionResults.map(result => result.cardId));
+  
+      // Check if this card was already answered in this session
+      if (!answeredThisSession.has(card.id)) {
+        // Only update the progress if it's the first time answering this card in this session
+        setProgress(prev => {
+          return {
+            ...prev,
+            correct: isCorrect ? prev.correct + 1 : prev.correct,
+            incorrect: isCorrect ? prev.incorrect : prev.incorrect + 1,
+            remaining: prev.remaining - 1,
+            percentage: Math.round(((isCorrect ? prev.correct + 1 : prev.correct) / prev.total) * 100)
+          };
+        });
+      }
     } catch (err) {
       console.error('Error saving progress:', err);
     }
