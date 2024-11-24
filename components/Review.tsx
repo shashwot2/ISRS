@@ -8,16 +8,27 @@ import { useAuth } from "../context/auth";
 const functions = getFunctions();
 const getCards = httpsCallable(functions, 'getCards');
 const addCard = httpsCallable(functions, 'addCard');
+const saveDeckProgress = httpsCallable(functions, 'saveDeckProgress');
+const getDeckProgress = httpsCallable(functions, 'getDeckProgress');
 interface ReviewProps {
   deckId: string;
   onBack: () => void;
 }
 
 interface CardItem {
+  id?: string;
   targetSentence: string;
   targetWord: string;
   answerSentence: string;
   answerWord: string;
+}
+
+interface ProgressStats {
+  total: number;
+  correct: number;
+  incorrect: number;
+  remaining: number;
+  percentage: number;
 }
 
 const Colors = {
@@ -137,21 +148,125 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [showInput, setShowInput] = useState(false);
   const [newWord, setNewWord] = useState('');
+  const [progress, setProgress] = useState<ProgressStats>({
+    total: 0,
+    correct: 0,
+    incorrect: 0,
+    remaining: 0,
+    percentage: 0
+  });
+  const [sessionResults, setSessionResults] = useState<{
+    cardId: string;
+    correct: boolean;
+  }[]>([]);
 
   const fetchCards = async () => {
     setLoading(true);
     setError(null);
     try {
-        const result = await getCards({ deckId });
-        const data = result.data as { cards: CardItem[] };
-        setCards(data.cards || []);
-        console.log('Fetched cards:', data.cards); // Debug log
-        console.log('Cards:', cards);
+      // First fetch the cards
+      const result = await getCards({ deckId });
+      const data = result.data as { cards: CardItem[] };
+      setCards(data.cards || []);
+  
+      // Then fetch progress data
+      const progressResult = await getDeckProgress({ deckId });
+      console.log("PRogress result", progressResult);
+      const progressData = progressResult.data.progress;
+  
+      if (progressData?.results && data.cards.length > 0) {
+        // Get the most recent result for each card
+        const cardResults = new Map();
+        progressData.results.forEach((result: any) => {
+          cardResults.set(result.cardId, {
+            correct: result.correct,
+            timestamp: result.timestamp
+          });
+        });
+  
+        // Count correct and incorrect based on most recent attempts
+        let correctCount = 0;
+        let incorrectCount = 0;
+  
+        data.cards.forEach(card => {
+          if (card.id) {
+            const result = cardResults.get(card.id);
+            if (result) {
+              if (result.correct) {
+                correctCount++;
+              } else {
+                incorrectCount++;
+              }
+            }
+          }
+        });
+  
+        setProgress({
+          total: data.cards.length,
+          correct: correctCount,
+          incorrect: incorrectCount,
+          remaining: data.cards.length - (correctCount + incorrectCount),
+          percentage: Math.round((correctCount / data.cards.length) * 100)
+        });
+      } else {
+        // Initialize progress with zero completions
+        setProgress({
+          total: data.cards.length,
+          correct: 0,
+          incorrect: 0,
+          remaining: data.cards.length,
+          percentage: 0
+        });
+      }
     } catch (err: any) {
-        console.error('Error fetching cards:', err);
-        setError('Failed to load cards. Please try again later.');
+      console.error('Error fetching cards:', err);
+      setError('Failed to load cards. Please try again later.');
     } finally {
-        setLoading(false);
+      setLoading(false);
+    }
+  };
+  
+  // Update handleSwipe to handle progress updates more accurately
+  const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+    const card = cards[cardIndex];
+    console.log("card index", cardIndex)
+    console.log("card" , card)
+    console.log("cardID", card.id)
+    console.log("Cards:", cards)
+    if (!card.id) return;
+  
+    try {
+      // Save progress to backend
+      await saveDeckProgress({
+        deckId,
+        cardId: card.id,
+        correct: isCorrect
+      });
+  
+      // Update local session results
+      setSessionResults(prev => [...prev, {
+        cardId: card.id!,
+        correct: isCorrect
+      }]);
+  
+      // Keep track of which cards have been answered this session
+      const answeredThisSession = new Set(sessionResults.map(result => result.cardId));
+  
+      // Check if this card was already answered in this session
+      if (!answeredThisSession.has(card.id)) {
+        // Only update the progress if it's the first time answering this card in this session
+        setProgress(prev => {
+          return {
+            ...prev,
+            correct: isCorrect ? prev.correct + 1 : prev.correct,
+            incorrect: isCorrect ? prev.incorrect : prev.incorrect + 1,
+            remaining: prev.remaining - 1,
+            percentage: Math.round(((isCorrect ? prev.correct + 1 : prev.correct) / prev.total) * 100)
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err);
     }
   };
   useEffect(() => {
@@ -183,9 +298,20 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
         <Text onPress={onBack} style={[styles.backButton, { color: Colors.dark.tint }]}>
           ← Back
         </Text>
-        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId} </Text>
+        <Text style={[styles.deckTitle, { color: Colors.dark.text }]}>Deck {deckId}</Text>
       </View>
 
+      {/* Progress Display */}
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          Progress: {progress.percentage}% Complete
+        </Text>
+        <Text style={styles.progressDetails}>
+          Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
+        </Text>
+      </View>
+
+      {/* Keep existing Add Card UI */}
       {!showInput ? (
         <TouchableOpacity
           style={styles.addButton}
@@ -200,7 +326,7 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
             placeholder="Enter a word"
             placeholderTextColor="#AAA"
             value={newWord}
-            onChangeText={(text) => setNewWord(text)}
+            onChangeText={setNewWord}
           />
           <View style={styles.buttonRow}>
             <TouchableOpacity
@@ -263,9 +389,12 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
               },
             }}
             verticalSwipe={false}
-            onSwipedLeft={(cardIndex) => console.log('Correct on card:', cardIndex)}
-            onSwipedRight={(cardIndex) => console.log('Incorrect on card:', cardIndex)}
-            onSwipedAll={() => console.log('All cards completed')}
+            onSwipedLeft={(cardIndex) => handleSwipe(cardIndex, true)}
+            onSwipedRight={(cardIndex) => handleSwipe(cardIndex, false)}
+            onSwipedAll={() => {
+              console.log('Session complete');
+              console.log('Session results:', sessionResults);
+            }}
             containerStyle={styles.swiperContainer}
             cardStyle={styles.cardContainer}
           />
@@ -275,8 +404,26 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   );
 };
 
-
 const styles = StyleSheet.create({
+  progressContainer: {
+    padding: 16,
+    backgroundColor: '#2D2D2D',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+  },
+  progressText: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  progressDetails: {
+    color: Colors.dark.text,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   container: {
     flex: 1,
   },
