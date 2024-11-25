@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  ActivityIndicator,
+  Platform,
   ViewStyle,
   TextStyle,
   ImageStyle,
-  Platform,
 } from "react-native";
 import { useLanguageLearning } from "../languagecontext";
 import { useAuth } from "../../../context/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import {
   Brain,
   Clock,
@@ -29,9 +31,7 @@ import {
   LogOut,
   Edit2,
 } from "lucide-react-native";
-
 import { EditProfileModal } from "./editavatar";
-
 // Types
 interface MemoryMetric {
   title: string;
@@ -52,17 +52,32 @@ interface LearningItem {
   context?: string;
 }
 
-interface LearningStats {
-  retentionRate: number;
-  accuracyRate: number;
-  totalWords: number;
-  averageRecallTime: number;
-  implicitConnections: number;
-  vocabularyGrowth: number;
+interface Deck {
+  id: string;
+  cards: any[];
+}
+
+interface ProgressResult {
+  data?: {
+    progress?: {
+      results: Array<{
+        correct: boolean;
+        targetWord?: string;
+        answerWord?: string;
+        reviewCount?: number;
+        context?: string;
+        timestamp: string;
+      }>;
+    };
+  };
 }
 
 type Styles = {
   container: ViewStyle;
+  centerContent: ViewStyle;
+  errorText: TextStyle;
+  retryButton: ViewStyle;
+  retryButtonText: TextStyle;
   header: ViewStyle;
   profileInfo: ViewStyle;
   avatarContainer: ViewStyle;
@@ -117,13 +132,74 @@ export default function ProfileScreen() {
   const { selectedLanguage } = useLanguageLearning();
   const { user, updateProfile } = useAuth();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  
+  // Firebase data state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userPreferences, setUserPreferences] = useState<any>(null);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [progress, setProgress] = useState<{
+    correct: number;
+    total: number;
+    cards: any[];
+  }>({ correct: 0, total: 0, cards: [] });
 
-  // Generate avatar URL using DiceBear
-  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/png?seed=${
-    user?.email || "guest"
-  }&backgroundColor=ffdfbf,ffd5dc,c0aede,bde4f4,b6e3f4&backgroundType=gradientLinear`;
+  const functions = getFunctions();
 
-  // Helper function to get display name
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const fetchUserData = async () => {
+      setLoading(true);
+      try {
+        // Get user preferences
+        const checkPreferences = httpsCallable(functions, 'checkUserPreferences');
+        const preferencesResult = await checkPreferences();
+        setUserPreferences(preferencesResult.data);
+
+        // Get user's decks
+        const getDecks = httpsCallable(functions, 'getDecks');
+        const decksResult = await getDecks();
+        const userDecks = decksResult.data as Deck[];
+        setDecks(userDecks);
+
+        // Get progress for each deck
+        const progressPromises = userDecks.map(async (deck: Deck) => {
+          const getDeckProgress = httpsCallable(functions, 'getDeckProgress');
+          return getDeckProgress({ deckId: deck.id }) as Promise<ProgressResult>;
+        });
+        const progressResults = await Promise.all(progressPromises);
+        
+        // Calculate total progress
+        const totalProgress = {
+          correct: 0,
+          total: 0,
+          cards: [] as any[],
+        };
+
+        progressResults.forEach((result) => {
+          if (result.data?.progress?.results) {
+            totalProgress.correct += result.data.progress.results
+              .filter(r => r.correct).length;
+            totalProgress.total += result.data.progress.results.length;
+            totalProgress.cards.push(...result.data.progress.results);
+          }
+        });
+
+        setProgress(totalProgress);
+
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.uid]);
+
+  // Helper functions
   const getDisplayName = () => {
     if (user?.displayName) return user.displayName;
     if (user?.email) return user.email.split("@")[0];
@@ -152,71 +228,85 @@ export default function ProfileScreen() {
     }
   };
 
-  const memoryMetrics: MemoryMetric[] = [
-    {
-      title: "Long-term Memory",
-      value: 245,
-      total: 500,
-      color: "#4CAF50",
-      icon: <Brain size={24} />,
-      description: "Words successfully stored in long-term memory",
-    },
-    {
-      title: "Active Learning",
-      value: 78,
-      total: 100,
-      color: "#2196F3",
-      icon: <Zap size={24} />,
-      description: "Words currently in active learning phase",
-    },
-    {
-      title: "Implicit Connections",
-      value: 156,
-      total: 200,
-      color: "#FF9800",
-      icon: <TrendingUp size={24} />,
-      description: "Pattern connections formed through context",
-    },
-  ];
-
-  const upcomingReviews: LearningItem[] = [
-    {
-      id: 1,
-      word: "おはよう",
-      translation: "Good morning",
-      nextReview: "In 2 hours",
-      stage: 3,
-      confidence: 0.85,
-      context: "Morning greetings",
-    },
-    {
-      id: 2,
-      word: "ありがとう",
-      translation: "Thank you",
-      nextReview: "Tomorrow",
-      stage: 2,
-      confidence: 0.72,
-      context: "Expressions of gratitude",
-    },
-    {
-      id: 3,
-      word: "すみません",
-      translation: "Excuse me",
-      nextReview: "In 3 days",
-      stage: 4,
-      confidence: 0.91,
-      context: "Polite expressions",
-    },
-  ];
-
-  const learningStats: LearningStats = {
-    retentionRate: 87,
-    accuracyRate: 92,
-    totalWords: 323,
-    averageRecallTime: 2.3,
-    implicitConnections: 156,
-    vocabularyGrowth: 15,
+  // Calculate metrics based on Firebase data
+  const calculateMemoryMetrics = (): MemoryMetric[] => {
+    const totalWords = decks.reduce((acc, deck) => acc + (deck.cards?.length || 0), 0);
+    const correctAnswers = progress.correct;
+    const totalAttempts = progress.total || 1;
+    
+    return [
+      {
+        title: "Long-term Memory",
+        value: correctAnswers,
+        total: totalAttempts,
+        color: "#4CAF50",
+        icon: <Brain size={24} />,
+        description: "Words successfully stored in long-term memory",
+      },
+      {
+        title: "Active Learning",
+        value: totalWords,
+        total: Math.max(totalWords, 100),
+        color: "#2196F3",
+        icon: <Zap size={24} />,
+        description: "Words currently in active learning phase",
+      },
+      {
+        title: "Progress Rate",
+        value: totalAttempts > 0 ? Math.round((correctAnswers / totalAttempts) * 100) : 0,
+        total: 100,
+        color: "#FF9800",
+        icon: <TrendingUp size={24} />,
+        description: "Overall learning progress rate",
+      },
+    ];
   };
+
+  // Calculate upcoming reviews based on Firebase data
+  const calculateUpcomingReviews = (): LearningItem[] => {
+    if (!progress.cards || progress.cards.length === 0) return [];
+
+    return progress.cards
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      .slice(0, 3)
+      .map((card, index) => ({
+        id: index + 1,
+        word: card.targetWord || "",
+        translation: card.answerWord || "",
+        nextReview: "Upcoming",
+        stage: card.reviewCount || 1,
+        confidence: card.correct ? 0.8 : 0.4,
+        context: card.context || "Practice",
+      }));
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#333" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => window.location.reload()}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const memoryMetrics = calculateMemoryMetrics();
+  const upcomingReviews = calculateUpcomingReviews();
+  const retentionRate = progress.total > 0 
+    ? Math.round((progress.correct / progress.total) * 100) 
+    : 0;
 
   return (
     <ScrollView style={styles.container}>
@@ -232,13 +322,15 @@ export default function ProfileScreen() {
               <Edit2 size={20} color="#fff" />
             </TouchableOpacity>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelText}>B1</Text>
+              <Text style={styles.levelText}>
+                {userPreferences?.proficiencyLevel?.charAt(0) || "B1"}
+              </Text>
             </View>
           </View>
           <Text style={styles.username}>{getDisplayName()}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
           <Text style={styles.userLevel}>
-            Intermediate • {selectedLanguage}
+            {userPreferences?.proficiencyLevel || "Intermediate"} • {selectedLanguage}
           </Text>
         </View>
       </View>
@@ -247,19 +339,23 @@ export default function ProfileScreen() {
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Brain size={24} color="#4CAF50" />
-          <Text style={styles.statValue}>{learningStats.retentionRate}%</Text>
+          <Text style={styles.statValue}>{retentionRate}%</Text>
           <Text style={styles.statLabel}>Retention</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Target size={24} color="#2196F3" />
-          <Text style={styles.statValue}>{learningStats.accuracyRate}%</Text>
+          <Text style={styles.statValue}>
+            {progress.total > 0 ? Math.round((progress.correct / progress.total) * 100) : 0}%
+          </Text>
           <Text style={styles.statLabel}>Accuracy</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <BookOpen size={24} color="#FF9800" />
-          <Text style={styles.statValue}>{learningStats.totalWords}</Text>
+          <Text style={styles.statValue}>
+            {decks.reduce((acc, deck) => acc + (deck.cards?.length || 0), 0)}
+          </Text>
           <Text style={styles.statLabel}>Words</Text>
         </View>
       </View>
@@ -299,40 +395,6 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      {/* Upcoming Reviews */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Review Schedule</Text>
-        <Text style={styles.sectionSubtitle}>Upcoming spaced repetitions</Text>
-        <View style={styles.reviewSection}>
-          {upcomingReviews.map((item, index) => (
-            <View key={index} style={styles.reviewCard}>
-              <View style={styles.reviewContent}>
-                <View style={styles.wordContainer}>
-                  <Text style={styles.word}>{item.word}</Text>
-                  <Text style={styles.translation}>{item.translation}</Text>
-                  <Text style={styles.context}>{item.context}</Text>
-                </View>
-                <View>
-                  <View style={styles.stageIndicator}>
-                    <Repeat size={16} color="#666" />
-                    <Text style={styles.stageText}>Stage {item.stage}</Text>
-                  </View>
-                  <Text style={styles.reviewTime}>{item.nextReview}</Text>
-                </View>
-              </View>
-              <View style={styles.confidenceBar}>
-                <View
-                  style={[
-                    styles.confidenceFill,
-                    { width: `${item.confidence * 100}%` },
-                  ]}
-                />
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-
       {/* Learning Insights */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Learning Insights</Text>
@@ -341,19 +403,19 @@ export default function ProfileScreen() {
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <Clock size={24} color="#4CAF50" />
-              <Text style={styles.insightTitle}>Average Recall Time</Text>
+              <Text style={styles.insightTitle}>Study Pattern</Text>
             </View>
             <Text style={styles.insightValue}>
-              {learningStats.averageRecallTime}s
+              {userPreferences?.studyPattern || "Daily"}
             </Text>
           </View>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <TrendingUp size={24} color="#2196F3" />
-              <Text style={styles.insightTitle}>Vocabulary Growth</Text>
+              <Text style={styles.insightTitle}>Learning Style</Text>
             </View>
             <Text style={styles.insightValue}>
-              +{learningStats.vocabularyGrowth}/day
+              {userPreferences?.learningStyle || "Visual"}
             </Text>
           </View>
         </View>
@@ -379,7 +441,6 @@ export default function ProfileScreen() {
         onDisplayNameChange={handleDisplayNameChange}
         displayName={user?.displayName || user?.email?.split("@")[0] || "Guest"}
       />
-
     </ScrollView>
   );
 }
@@ -388,6 +449,27 @@ const styles = StyleSheet.create<Styles>({
   container: {
     flex: 1,
     backgroundColor: "#F5F5DC",
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#D32F2F',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#333',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     backgroundColor: "#fff",
@@ -604,11 +686,6 @@ const styles = StyleSheet.create<Styles>({
     color: "#666",
     textAlign: "right",
   },
-  reviewCount: {
-    fontSize: 12,
-    color: "#666",
-    textAlign: "right",
-  },
   stageIndicator: {
     flexDirection: "row",
     alignItems: "center",
@@ -666,10 +743,6 @@ const styles = StyleSheet.create<Styles>({
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-  },
-  insightLabel: {
-    fontSize: 12,
-    color: "#666",
   },
   actionButtons: {
     flexDirection: "row",
