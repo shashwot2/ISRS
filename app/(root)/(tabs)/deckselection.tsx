@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, TextInp
 import Review from '../../../components/Review';
 import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { useLanguageLearning } from '../languagecontext';
 
 const functions = getFunctions();
 const getDecks = httpsCallable(functions, 'getDecks');
@@ -25,26 +26,29 @@ const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, on
 
 const DeckSelection: React.FC = () => {
     const { user } = useAuth();
+    const { selectedLanguage } = useLanguageLearning();
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
     const [decks, setDecks] = useState<Deck[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newDeckName, setNewDeckName] = useState<string>('');
-    const [newDeckDiscription, setNewDeckDiscription] = useState<string>('');
+    const [newDeckDescription, setNewDeckDescription] = useState<string>('');
 
     const fetchDecks = async () => {
+        if (!selectedLanguage) return; // Don't fetch if no language is selected
         setLoading(true);
         setError(null);
 
         try {
-            const result = await getDecks();
+            const result = await getDecks({ language: selectedLanguage });
             const data = result.data as any[];
             setDecks(
                 data.map((deck) => ({
                     id: deck.id,
                     name: deck.deckName,
                     description: deck.description,
+                    language: deck.language,
                 }))
             );
         } catch (err: any) {
@@ -60,11 +64,16 @@ const DeckSelection: React.FC = () => {
             alert("Deck name cannot be empty.");
             return;
         }
-    
+        
+        if (!selectedLanguage) {
+            alert("Please select a language first.");
+            return;
+        }
         const newDeckData = {
             userId: user?.uid, // Ensure user is logged in
             deckName: newDeckName, // Required
-            description: newDeckDiscription || "default description", // Optional, default to "default description"
+            description: newDeckDescription || "default description", // Optional, default to "default description"
+            language: selectedLanguage,
             tags: ["default"], // Must be an array
             isShared: false, // Optional, default to false
             sharedWith: [], // Optional, default to empty array
@@ -73,34 +82,50 @@ const DeckSelection: React.FC = () => {
         };
     
         console.log("Payload to addDeck:", newDeckData);
-    
         try {
             const result = await addDeck(newDeckData);
-            console.log("Deck added:", result.data); // Success response
+            console.log("Deck added:", result.data);
             setNewDeckName('');
-            setNewDeckDiscription('');
+            setNewDeckDescription('');
             setIsModalVisible(false);
-            fetchDecks(); // Refresh the deck list
+            fetchDecks();
         } catch (err: any) {
             console.error("Error adding deck:", err);
             alert("Failed to add deck. Please try again.");
         }
     };
     useEffect(() => {
-        fetchDecks();
-    }, []);
+        if (selectedLanguage) {
+            fetchDecks();
+        }
+    }, [selectedLanguage])
 
     if (selectedDeckId) {
         return <Review deckId={selectedDeckId} onBack={() => setSelectedDeckId(null)} />;
     }
-
+     if (!selectedLanguage) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.headerText}>Please select a language first</Text>
+            </View>
+        );
+    }
     return (
         <View style={styles.container}>
             <Text style={styles.headerText}>Deck Selection</Text>
             {loading ? (
-                <Text>Loading...</Text>
+                <Text>Loading {selectedLanguage} decks...</Text>
             ) : error ? (
                 <Text>Error: {error}</Text>
+            ) :  decks.length === 0 ? (
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateSubtext}>
+                        No decks found for {selectedLanguage}
+                    </Text>
+                    <Text style={styles.emptyStateSubtext}>
+                        Create your first {selectedLanguage} deck to start learning!
+                    </Text>
+                </View>
             ) : (
                 <FlatList
                     data={decks}
@@ -145,8 +170,8 @@ const DeckSelection: React.FC = () => {
                         <TextInput
                             style={styles.input}
                             placeholder="Enter Deck Description"
-                            value={newDeckDiscription}
-                            onChangeText={setNewDeckDiscription}
+                            value={newDeckDescription}
+                            onChangeText={setNewDeckDescription}
                         />
                         <Button title="Confirm" onPress={handleAddDeck} />
                         <Button title="Cancel" color="red" onPress={() => setIsModalVisible(false)} />
@@ -197,6 +222,17 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#5A9',
         borderRadius: 5,
+    },
+    emptyState: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyStateSubtext: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginTop: 10,
     },
     addButtonText: {
         fontSize: 18,

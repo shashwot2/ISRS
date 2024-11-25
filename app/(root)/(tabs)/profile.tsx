@@ -159,7 +159,7 @@ export default function ProfileScreen() {
 
         // Get user's decks
         const getDecks = httpsCallable(functions, 'getDecks');
-        const decksResult = await getDecks();
+        const decksResult = await getDecks({language: selectedLanguage});
         const userDecks = decksResult.data as Deck[];
         setDecks(userDecks);
 
