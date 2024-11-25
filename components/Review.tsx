@@ -273,6 +273,50 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
       console.error('Error saving progress:', err);
     }
   };
+  
+  // Update handleSwipe to handle progress updates more accurately
+  const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+    const card = cards[cardIndex];
+    console.log("card index", cardIndex)
+    console.log("card" , card)
+    console.log("cardID", card.id)
+    console.log("Cards:", cards)
+    if (!card.id) return;
+  
+    try {
+      // Save progress to backend
+      await saveDeckProgress({
+        deckId,
+        cardId: card.id,
+        correct: isCorrect
+      });
+  
+      // Update local session results
+      setSessionResults(prev => [...prev, {
+        cardId: card.id!,
+        correct: isCorrect
+      }]);
+  
+      // Keep track of which cards have been answered this session
+      const answeredThisSession = new Set(sessionResults.map(result => result.cardId));
+  
+      // Check if this card was already answered in this session
+      if (!answeredThisSession.has(card.id)) {
+        // Only update the progress if it's the first time answering this card in this session
+        setProgress(prev => {
+          return {
+            ...prev,
+            correct: isCorrect ? prev.correct + 1 : prev.correct,
+            incorrect: isCorrect ? prev.incorrect : prev.incorrect + 1,
+            remaining: prev.remaining - 1,
+            percentage: Math.round(((isCorrect ? prev.correct + 1 : prev.correct) / prev.total) * 100)
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err);
+    }
+  };
 useEffect(() => {
     fetchCards();
 }, []);
@@ -334,7 +378,6 @@ const handleAddWord = async () => {
           Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
         </Text>
       </View>
-
       {/* Keep existing Add Card UI */}
       {!showInput ? (
         <TouchableOpacity

@@ -10,7 +10,7 @@ const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
 
-// Initialize Firebase Functions only after Firebase App is initialized
 const functions: Functions = getFunctions(app);
 
-export { app, auth, functions };
+export { auth, functions };
+export default app;
