@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, TouchableOpacity, ActivityIndicator, TextInput,  Alert } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from "../context/auth";
+import { useLanguageLearning } from "../app/(root)/languagecontext";
 
 const functions = getFunctions();
 const getCards = httpsCallable(functions, 'getCards');
@@ -141,6 +142,9 @@ const FlippableCard: React.FC<{
 const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
   const { width: screenWidth } = Dimensions.get('window');
   const headerHeight = 100;
+  const { selectedLanguage, learningPreferences } = useLanguageLearning();
+  const [generatingCards, setGeneratingCards] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
   const cardSize = Math.min(screenWidth - 40, 400);
   const { user } = useAuth();
   const [cards, setCards] = useState<CardItem[]>([]);
@@ -269,29 +273,93 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
       console.error('Error saving progress:', err);
     }
   };
-  useEffect(() => {
-    fetchCards();
-}, []);
-  const handleAddCard = async () => {
-    if (!newWord.trim()) return; // Avoid empty submissions
+  
+  // Update handleSwipe to handle progress updates more accurately
+  const handleSwipe = async (cardIndex: number, isCorrect: boolean) => {
+    const card = cards[cardIndex];
+    console.log("card index", cardIndex)
+    console.log("card" , card)
+    console.log("cardID", card.id)
+    console.log("Cards:", cards)
+    if (!card.id) return;
+  
     try {
-      const result = await addCard({
-        userId: user?.uid,
+      // Save progress to backend
+      await saveDeckProgress({
         deckId,
-        answerWord: newWord, // Pass the new word
-        language: "Chinese",
+        cardId: card.id,
+        correct: isCorrect
       });
-      console.log('Card added:', result);
-      setShowInput(false);
-      setNewWord('');
-      fetchCards();
-    } catch (err: any) {
-      
-      console.error('Error adding card:', err);
-      setError('Failed to add card. Please try again later.');
+  
+      // Update local session results
+      setSessionResults(prev => [...prev, {
+        cardId: card.id!,
+        correct: isCorrect
+      }]);
+  
+      // Keep track of which cards have been answered this session
+      const answeredThisSession = new Set(sessionResults.map(result => result.cardId));
+  
+      // Check if this card was already answered in this session
+      if (!answeredThisSession.has(card.id)) {
+        // Only update the progress if it's the first time answering this card in this session
+        setProgress(prev => {
+          return {
+            ...prev,
+            correct: isCorrect ? prev.correct + 1 : prev.correct,
+            incorrect: isCorrect ? prev.incorrect : prev.incorrect + 1,
+            remaining: prev.remaining - 1,
+            percentage: Math.round(((isCorrect ? prev.correct + 1 : prev.correct) / prev.total) * 100)
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err);
     }
   };
-
+useEffect(() => {
+    fetchCards();
+}, []);
+const handleAddWord = async () => {
+  if (!newWord.trim() || !selectedLanguage) return;
+  
+  setGeneratingCards(true);
+  setGenerationProgress(0);
+  
+  try {
+    // Generate multiple cards for the same word
+    const result = await addCard({
+      userId: user?.uid,
+      deckId,
+      answerWord: newWord,
+      language: selectedLanguage,
+      preferences: {
+        proficiencyLevel: learningPreferences.proficiencyLevel,
+        learningStyle: learningPreferences.learningStyle,
+        generateRelated: true // Flag to generate related cards
+      }
+    });
+    
+    console.log('Cards added:', result);
+    setShowInput(false);
+    setNewWord('');
+    fetchCards();
+    
+    Alert.alert(
+      'Success',
+      'Generated multiple practice cards for your word!',
+      [{ text: 'OK' }]
+    );
+  } catch (err: any) {
+    console.error('Error adding cards:', err);
+    Alert.alert(
+      'Error',
+      'Failed to generate cards. Please try again.'
+    );
+  } finally {
+    setGeneratingCards(false);
+  }
+};
   return (
     <View style={[styles.container, { backgroundColor: Colors.dark.background }]}>
       <View style={[styles.header, { height: headerHeight }]}>
@@ -310,17 +378,19 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
           Correct: {progress.correct} | Incorrect: {progress.incorrect} | Remaining: {progress.remaining}
         </Text>
       </View>
-
       {/* Keep existing Add Card UI */}
       {!showInput ? (
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowInput(true)}
         >
-          <Text style={styles.addButtonText}>+ Add Card</Text>
+          <Text style={styles.addButtonText}>+ Add New Word</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>
+            Enter a word to learn (we'll create multiple practice cards)
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Enter a word"
@@ -328,16 +398,33 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
             value={newWord}
             onChangeText={setNewWord}
           />
+          
+          {generatingCards && (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator color="#FFF" />
+              <Text style={styles.progressText}>
+                Generating your practice cards...
+              </Text>
+            </View>
+          )}
+
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={handleAddCard}
+              style={[
+                styles.confirmButton,
+                generatingCards && styles.disabledButton
+              ]}
+              onPress={handleAddWord}
+              disabled={generatingCards}
             >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
+              <Text style={styles.confirmButtonText}>
+                Generate Practice Cards
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => setShowInput(false)}
+              disabled={generatingCards}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -405,18 +492,19 @@ const Review: React.FC<ReviewProps> = ({ deckId, onBack }) => {
 };
 
 const styles = StyleSheet.create({
+    inputLabel: {
+    color: '#FFF',
+    marginBottom: 8,
+    fontSize: 14,
+  },
   progressContainer: {
-    padding: 16,
-    backgroundColor: '#2D2D2D',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
   },
   progressText: {
-    color: Colors.dark.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#FFF',
+    marginTop: 8,
+    fontSize: 14,
   },
   progressDetails: {
     color: Colors.dark.text,
