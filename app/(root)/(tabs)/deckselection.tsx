@@ -9,10 +9,11 @@ const functions = getFunctions();
 const getDecks = httpsCallable(functions, 'getDecks');
 const addDeck = httpsCallable(functions, 'addDeck');
 
+// interface for deck object
 interface Deck {
-    id: string;
-    name: string;
-    description?: string;
+    id: string; // Unique ID for the deck
+    name: string; // Name of the deck
+    description?: string; // Description of the deck
 }
 
 const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, onPress }) => {
@@ -25,6 +26,7 @@ const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, on
 };
 
 const DeckSelection: React.FC = () => {
+    // state management and hooks
     const { user } = useAuth();
     const { selectedLanguage } = useLanguageLearning();
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);

@@ -1,19 +1,20 @@
 import React, { createContext, useContext, useState } from 'react';
 
+// interface for language learning context
 interface LanguageLearningContext {
   selectedLanguage: string;
   setSelectedLanguage: (language: string) => void;
   learningPreferences: {
-    motivation: string;
-    studyPattern: string;
-    learningPace: string;
-    proficiencyLevel: string;
-    learningStyle: string;
-    age: string;
-    goal: string;
-    notifications: boolean;
-    dailyReminder: boolean;
-    speakingPractice: boolean;
+    motivation: string;      // why the user wants to learn
+    studyPattern: string;    // when/how often they study
+    learningPace: string;    // preferred speed of learning
+    proficiencyLevel: string;// current language skill level
+    learningStyle: string;   // visual, auditory, etc.
+    age: string;            // user's age group
+    goal: string;           // specific learning objectives
+    notifications: boolean;  // enable/disable notifications
+    dailyReminder: boolean; // daily study reminders
+    speakingPractice: boolean; // speaking exercise preferences
   };
   setLearningPreferences: (prefs: any) => void;
 }
@@ -35,6 +36,7 @@ export function LanguageLearningProvider({ children }: { children: React.ReactNo
     speakingPractice: true,
   });
 
+  // provide context values to children components
   return (
     <LanguageLearningContext.Provider 
       value={{ 
@@ -49,6 +51,7 @@ export function LanguageLearningProvider({ children }: { children: React.ReactNo
   );
 }
 
+// custom hook to consume the language learning context
 export function useLanguageLearning() {
   const context = useContext(LanguageLearningContext);
   if (context === undefined) {
@@ -56,4 +59,3 @@ export function useLanguageLearning() {
   }
   return context;
 }
-

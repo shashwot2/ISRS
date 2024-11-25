@@ -12,6 +12,7 @@ const addCard = httpsCallable(functions, 'addCard');
 const saveDeckProgress = httpsCallable(functions, 'saveDeckProgress');
 const getDeckProgress = httpsCallable(functions, 'getDeckProgress');
 interface ReviewProps {
+  
   deckId: string;
   onBack: () => void;
 }

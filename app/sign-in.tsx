@@ -20,63 +20,69 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { httpsCallable } from "firebase/functions";
 import { functions } from './firebaseConfig';
 
+// initializes deck for new users via firebase cloud function
 const initializeDeck = async () => {
   try {
     const initDeck = httpsCallable(functions, "initDeck");
     const result = await initDeck();
-    console.log("Deck initialized:", result.data);
+    console.log("deck initialized:", result.data);
   } catch (error) {
-    console.error("Error initializing deck:", error);
+    console.error("error initializing deck:", error);
   }
 };
+
+// maps firebase auth error codes to user-friendly messages
 const getAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {
-    // Sign In Errors
+    // login error cases
     case AuthErrorCodes.INVALID_EMAIL:
-      return 'Invalid email address format';
+      return 'invalid email address format';
     case AuthErrorCodes.USER_DELETED:
-      return 'No account exists with this email';
+      return 'no account exists with this email';
     case AuthErrorCodes.INVALID_PASSWORD:
-      return 'Incorrect password';
+      return 'incorrect password';
     case AuthErrorCodes.USER_DISABLED:
-      return 'This account has been disabled';
+      return 'this account has been disabled';
     case AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER:
-      return 'Too many failed attempts. Please try again later';
+      return 'too many failed attempts. please try again later';
     
-    // Sign Up Errors
+    // signup error cases
     case AuthErrorCodes.EMAIL_EXISTS:
-      return 'An account already exists with this email';
+      return 'an account already exists with this email';
     case AuthErrorCodes.WEAK_PASSWORD:
-      return 'Password should be at least 6 characters';
+      return 'password should be at least 6 characters';
     case AuthErrorCodes.OPERATION_NOT_ALLOWED:
-      return 'Email/password sign up is not enabled';
+      return 'email/password sign up is not enabled';
     
-    // Network Errors
+    // network error case
     case AuthErrorCodes.NETWORK_REQUEST_FAILED:
-      return 'Network connection failed. Please check your internet';
+      return 'network connection failed. please check your internet';
     
     default:
-      return 'An unexpected error occurred. Please try again';
+      return 'an unexpected error occurred. please try again';
   }
 };
 
+// validates email format using regex
 const validateEmail = (email: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email) return 'Email is required';
-  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+  if (!email) return 'email is required';
+  if (!emailRegex.test(email)) return 'please enter a valid email address';
   return null;
 };
 
+// validates password meets minimum requirements
 const validatePassword = (password: string) => {
-  if (!password) return 'Password is required';
-  if (password.length < 6) return 'Password must be at least 6 characters';
-  if (!/\d/.test(password)) return 'Password must contain at least one number';
-  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter';
+  if (!password) return 'password is required';
+  if (password.length < 6) return 'password must be at least 6 characters';
+  if (!/\d/.test(password)) return 'password must contain at least one number';
+  if (!/[a-zA-Z]/.test(password)) return 'password must contain at least one letter';
   return null;
 };
 
-
+// main signin/signup component
 export default function SignIn () {
+  // hooks for managing auth state and navigation
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,11 +92,12 @@ export default function SignIn () {
   const [isLogin, setIsLogin] = useState(true);
   const router = useRouter();
 
+  // handles user login attempt
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
 
-    // Validate inputs
+    // validate input fields
     const emailError = validateEmail(email);
     if (emailError) {
       setError(emailError);
@@ -106,6 +113,7 @@ export default function SignIn () {
     }
 
     try {
+      // attempt firebase login
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -115,16 +123,18 @@ export default function SignIn () {
       router.replace('/(root)/language');
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
-      console.log('Login error:', err.code, err.message);
+      console.log('login error:', err.code, err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // handles new user signup
   const handleSignup = async () => {
     setLoading(true);
     setError(null);
 
+    // validate input fields
     const emailError = validateEmail(email);
     if (emailError) {
       setError(emailError);
@@ -139,37 +149,40 @@ export default function SignIn () {
       return;
     }
 
+    // check password confirmation matches
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('passwords do not match');
       setLoading(false);
       return;
     }
 
     try {
+      // create new firebase user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       login(userCredential.user);
-      initializeDeck();
+      initializeDeck(); // setup initial deck for new user
       router.replace('/(root)/language');
     } catch (err: any) {
       setError(getAuthErrorMessage(err.code));
-      console.log('Signup error:', err.code, err.message);
+      console.log('signup error:', err.code, err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Rest of your component remains the same
+  // ui rendering
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Engrave</Text>
-      <Text style={styles.subtitle}>{isLogin ? 'Login' : 'Sign Up'}</Text>
+      <Text style={styles.title}>engrave</Text>
+      <Text style={styles.subtitle}>{isLogin ? 'login' : 'sign up'}</Text>
 
+      {/* email input field */}
       <TextInput
-        placeholder='Email'
+        placeholder='email'
         value={email}
         onChangeText={setEmail}
         style={styles.input}
@@ -177,17 +190,19 @@ export default function SignIn () {
         autoCapitalize="none"
       />
 
+      {/* password input field */}
       <TextInput
-        placeholder='Password'
+        placeholder='password'
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         style={styles.input}
       />
 
+      {/* confirm password field for signup */}
       {!isLogin && (
         <TextInput
-          placeholder='Confirm Password'
+          placeholder='confirm password'
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -195,19 +210,23 @@ export default function SignIn () {
         />
       )}
 
+      {/* loading indicator */}
       {loading && <ActivityIndicator size='large' color='#0000ff' />}
 
+      {/* error message display */}
       {error && <Text style={styles.errorText}>{error}</Text>}
 
+      {/* submit button */}
       <Pressable
         style={styles.button}
         onPress={isLogin ? handleLogin : handleSignup}
       >
         <Text style={styles.buttonText}>
-          {isLogin ? 'LOG IN' : 'SIGN UP'}
+          {isLogin ? 'log in' : 'sign up'}
         </Text>
       </Pressable>
 
+      {/* toggle between login/signup */}
       <Text
         style={styles.switchText}
         onPress={() => {
@@ -216,13 +235,14 @@ export default function SignIn () {
         }}
       >
         {isLogin
-          ? "Don't have an account? Sign Up"
-          : 'Already have an account? Login'}
+          ? "don't have an account? sign up"
+          : 'already have an account? login'}
       </Text>
     </View>
   );
 }
 
+// styles for component ui elements
 const styles = StyleSheet.create({
   container: {
     flex: 1,

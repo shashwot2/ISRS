@@ -15,6 +15,7 @@ import {
   Platform
 } from 'react-native';
 
+// Avatar Styles
 interface AvatarStyle {
   id: string;
   name: string;
@@ -22,6 +23,7 @@ interface AvatarStyle {
   category: 'Human' | 'Abstract' | 'Animal' | 'Pixel' | 'Custom';
 }
 
+// props to edit profile modal
 interface EditProfileModalProps {
   visible: boolean;
   onClose: () => void;

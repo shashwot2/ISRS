@@ -5,6 +5,9 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Image, StyleSheet } from 'react-native';
 const functions = getFunctions();
 const checkUserPreferences = httpsCallable(functions, 'checkUserPreferences');
+
+
+// list of lanagues engrave supports
 const languages = [
   "Mandarin Chinese", "Spanish", "English", "Hindi", "Arabic",
   "Bengali", "Portuguese", "Russian", "Japanese", "Punjabi",
@@ -17,6 +20,8 @@ const languages = [
   "Finnish", "Norwegian", "Slovak", "Croatian", "Bulgarian",
   "Lithuanian", "Slovenian", "Latvian", "Estonian", "Serbian"
 ];
+
+// country code map for engrave supported languages
 const getCountryCode = (language: string) => {
   const countryMap = {
     "Mandarin Chinese": "CN", "Spanish": "ES", "English": "GB", "Hindi": "IN", "Arabic": "SA",
@@ -37,6 +42,9 @@ export default function LanguageSelectionScreen() {
   const { setSelectedLanguage } = useLanguageLearning();
   const [loading, setLoading] = useState(false);
 
+
+  // handle language selection
+  // everytime the app starts the user has to pick a language
   const handleLanguageSelect = async (language: string) => {
     if (loading) return; 
     setLoading(true);

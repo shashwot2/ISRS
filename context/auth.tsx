@@ -4,6 +4,7 @@ import { auth } from '../app/firebaseConfig';
 import { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// interface for user
 interface UserInfo {
   uid: string;
   email: string | null;
@@ -12,6 +13,7 @@ interface UserInfo {
   avatarStyle?: string;
 }
 
+// interface for auth
 interface AuthContextType {
   user: UserInfo | null;
   login: (user: User) => Promise<void>;
@@ -30,6 +32,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
+
+  // initializes auth state if async storage has user data
+  // else errors out and removes user data from async storage
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -68,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // login function that sets user data in async storage
   const login = async (firebaseUser: User) => {
     try {
       const userData: UserInfo = {
@@ -75,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
         photoURL: firebaseUser.photoURL,
-        avatarStyle: 'avataaars', // Default avatar style
+        avatarStyle: 'firebase', // Default avatar style
       };
 
       await AsyncStorage.setItem('user', JSON.stringify(userData));
@@ -86,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // logout function that removes user data from async storage
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('user');
@@ -96,6 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // update profile function that updates user data in async storage
   const updateProfile = async (data: Partial<UserInfo>) => {
     try {
       if (!user) return;

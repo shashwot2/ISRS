@@ -32,6 +32,8 @@ import {
   Edit2,
 } from "lucide-react-native";
 import { EditProfileModal } from "./editavatar";
+
+
 // Types
 interface MemoryMetric {
   title: string;
@@ -129,6 +131,8 @@ type Styles = {
 };
 
 export default function ProfileScreen() {
+
+  // get language and user data from context
   const { selectedLanguage } = useLanguageLearning();
   const { user, updateProfile } = useAuth();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -177,6 +181,7 @@ export default function ProfileScreen() {
           cards: [] as any[],
         };
 
+        // Calculate total progress from all decks
         progressResults.forEach((result) => {
           if (result.data?.progress?.results) {
             totalProgress.correct += result.data.progress.results
@@ -206,12 +211,14 @@ export default function ProfileScreen() {
     return "Guest";
   };
 
+  // Generate avatar URL based on user data
   const getAvatarUrl = () => {
     return `https://api.dicebear.com/7.x/${
       user?.avatarStyle || "avataaars"
     }/png?seed=${user?.email || "guest"}`;
   };
 
+  // Update user profile data
   const handleStyleChange = async (style: string) => {
     try {
       await updateProfile({ avatarStyle: style });
@@ -220,6 +227,7 @@ export default function ProfileScreen() {
     }
   };
 
+  // Update user display name
   const handleDisplayNameChange = async (name: string) => {
     try {
       await updateProfile({ displayName: name });

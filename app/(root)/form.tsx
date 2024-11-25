@@ -28,6 +28,10 @@ export default function LearningPreferencesForm() {
   const [notifications, setNotifications] = useState<boolean>(true);
 
   // Step definitions
+  // First step: motivation
+  // Second step: proficiency level
+  // Third step: learning style
+  // Fourth step: study pattern
   const steps = [
     {
       question: "Why are you learning a language?",
@@ -77,6 +81,8 @@ export default function LearningPreferencesForm() {
     }
   ];
 
+
+  // function to handle next button press
   const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
