@@ -11,26 +11,29 @@ const getCards = httpsCallable(functions, 'getCards');
 const addCard = httpsCallable(functions, 'addCard');
 const saveDeckProgress = httpsCallable(functions, 'saveDeckProgress');
 const getDeckProgress = httpsCallable(functions, 'getDeckProgress');
+
+// interface for review component
 interface ReviewProps {
-  
-  deckId: string;
-  onBack: () => void;
+  deckId: string; // Unique ID for the deck
+  onBack: () => void; // Function to navigate back
 }
 
+// interface for card item
 interface CardItem {
-  id?: string;
-  targetSentence: string;
-  targetWord: string;
-  answerSentence: string;
-  answerWord: string;
+  id?: string; // Unique ID for the card
+  targetSentence: string; // Sentence with the target word
+  targetWord: string; // Word to be learned
+  answerSentence: string; // Sentence with the answer word
+  answerWord: string; // Answer word
 }
 
+// interface for progress stats
 interface ProgressStats {
-  total: number;
-  correct: number;
-  incorrect: number;
-  remaining: number;
-  percentage: number;
+  total: number; // Total number of cards
+  correct: number; // Number of correct answers
+  incorrect: number; // Number of incorrect answers
+  remaining: number; // Number of remaining cards
+  percentage: number; // Percentage of completion
 }
 
 const Colors = {
@@ -60,7 +63,9 @@ const HighlightedText: React.FC<{
   const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
 
   return (
+    
     <Text style={[styles.cardText, { color: textColor }]}>
+      {/* Highlight the target word in the sentence below */}
       {parts.map((part, index) =>
         part.toLowerCase() === word.toLowerCase() ? (
           <Text key={index} style={styles.highlightedWord}>
