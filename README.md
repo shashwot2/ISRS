@@ -1,6 +1,6 @@
 # Engrave - A Language Learning App
 
-Engrave is a language learning application built with React Native and Firebase, using Expo for streamlined development and deployment. The app provides interactive tools for users to learn new languages, manage their progress, and engage in practice sessions.
+Engrave is a language learning flashcard application built with React Native and Firebase, using Expo for streamlined development and deployment. The app provides interactive tools for users to learn new languages, manage their progress, and engage in practice sessions.
 
 ## Features
 
