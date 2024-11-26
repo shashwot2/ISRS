@@ -1,6 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '../../context/auth';
-import { LanguageLearningProvider } from './languagecontext';
+import { LanguageLearningProvider } from '../../context/languagecontext';
 import { Text } from 'react-native';
 
 export default function AppLayout() {

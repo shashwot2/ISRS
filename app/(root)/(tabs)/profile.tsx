@@ -12,7 +12,7 @@ import {
   TextStyle,
   ImageStyle,
 } from "react-native";
-import { useLanguageLearning } from "../languagecontext";
+import { useLanguageLearning } from "../../../context/languagecontext";
 import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import {

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, TextInp
 import Review from '../../../components/Review';
 import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { useLanguageLearning } from '../languagecontext';
+import { useLanguageLearning } from '../../../context/languagecontext';
 
 const functions = getFunctions();
 const getDecks = httpsCallable(functions, 'getDecks');
