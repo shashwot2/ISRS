@@ -59,26 +59,26 @@ Engrave is a language learning application built with React Native and Firebase,
 
 ## Folder Structure
 
-.
-├── app/
-│   ├── _layout.tsx        # Navigation layout
-│   ├── firebaseConfig.tsx # Firebase configuration
-│   ├── index.tsx          # Entry point
-│   ├── sign-in.tsx        # Authentication screen
-├── components/
-│   ├── Collapsible.tsx    # Collapsible UI component
-│   ├── ExternalLink.tsx   # Link component
-│   ├── Review.tsx         # Flashcard review screen
-│   ├── ThemedText.tsx     # Themed text component
-│   ├── ThemedView.tsx     # Themed view component
-├── constants/
-│   ├── Colors.ts          # App color theme
-│   ├── sizes.ts           # Size constants
-├── context/
-│   ├── auth.ts            # Auth context for user state
-│   ├── languagecontext.tsx # Language context for preferences
-├── hooks/                 # Custom React hooks
-├── assets/                # App assets (fonts, images)
+
+├── app/ \
+│   ├── _layout.tsx        # Navigation layout \
+│   ├── firebaseConfig.tsx # Firebase configuration \
+│   ├── index.tsx          # Entry point \
+│   ├── sign-in.tsx        # Authentication screen \
+├── components/ 
+│   ├── Collapsible.tsx    # Collapsible UI component \
+│   ├── ExternalLink.tsx   # Link component \ \
+│   ├── Review.tsx         # Flashcard review screen \
+│   ├── ThemedText.tsx     # Themed text component \
+│   ├── ThemedView.tsx     # Themed view component \
+├── constants/ \
+│   ├── Colors.ts          # App color theme \
+│   ├── sizes.ts           # Size constants \
+├── context/ \
+│   ├── auth.ts            # Auth context for user state \ \
+│   ├── languagecontext.tsx # Language context for preferences \ 
+├── hooks/                 # Custom React hooks \ \
+├── assets/                # App assets (fonts, images) \
 ├── scripts/               # Utility scripts
 
 ## How It Works
