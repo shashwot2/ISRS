@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Switch, SafeAreaView, ActivityIndicator } from 'react-native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { router } from 'expo-router';
-import { useLanguageLearning } from './languagecontext';
+import { useLanguageLearning } from '../../context/languagecontext';
 
 interface StepOptionProps {
   text: string;

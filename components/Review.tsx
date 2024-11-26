@@ -4,7 +4,7 @@ import Swiper from 'react-native-deck-swiper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from "../context/auth";
-import { useLanguageLearning } from "../app/(root)/languagecontext";
+import { useLanguageLearning } from "../context/languagecontext";
 
 const functions = getFunctions();
 const getCards = httpsCallable(functions, 'getCards');

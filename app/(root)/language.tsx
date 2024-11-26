@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useLanguageLearning } from './languagecontext';
+import { useLanguageLearning } from '../../context/languagecontext';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import React, { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Image, StyleSheet } from 'react-native';
