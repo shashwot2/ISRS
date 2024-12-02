@@ -47,7 +47,7 @@ const DeckSelection: React.FC = () => {
             const result = await getDecks({ language: selectedLanguage });
             const data = result.data as any[];
             const newDeck = {
-                id: 'new-deck-id',
+                id: 'OHkX7WkQY3MlCIBNafn1',
                 name: 'Review of the Day',
                 description: 'This deck contains the words you have reviewed today',
                 language: selectedLanguage,
