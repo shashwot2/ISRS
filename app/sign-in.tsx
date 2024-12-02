@@ -179,7 +179,7 @@ export default function SignIn () {
     <View style={styles.container}>
       <Text style={styles.title}>engrave</Text>
       <Text style={styles.subtitle}>{isLogin ? 'login' : 'sign up'}</Text>
-
+      <Text style={styles.normal_text}>Email</Text>
       {/* email input field */}
       <TextInput
         placeholder='email'
@@ -191,6 +191,7 @@ export default function SignIn () {
       />
 
       {/* password input field */}
+      <Text style={styles.normal_text}>Password</Text>
       <TextInput
         placeholder='password'
         value={password}
@@ -200,6 +201,9 @@ export default function SignIn () {
       />
 
       {/* confirm password field for signup */}
+      {!isLogin && (
+        <Text style={styles.normal_text}>Confirm Password</Text>
+      )}
       {!isLogin && (
         <TextInput
           placeholder='confirm password'
@@ -260,6 +264,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  normal_text: {
+    fontSize: 18,
+    marginBottom: 0,
+    textAlign: 'left',
   },
   input: {
     marginBottom: 20,
