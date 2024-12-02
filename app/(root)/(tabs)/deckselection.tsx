@@ -17,8 +17,9 @@ interface Deck {
 }
 
 const DeckComponent: React.FC<{ deck: Deck; onPress: () => void }> = ({ deck, onPress }) => {
+    const isSpecialDeck = deck.name === "Review of the Day";
     return (
-        <TouchableOpacity onPress={onPress} style={styles.deck}>
+        <TouchableOpacity onPress={onPress} style={[styles.deck, isSpecialDeck && styles.specialdeck]}>
             <Text style={styles.deckIDText}>{deck.name}</Text>
             <Text style={styles.deckText}>{deck.description}</Text>
         </TouchableOpacity>
@@ -45,14 +46,26 @@ const DeckSelection: React.FC = () => {
         try {
             const result = await getDecks({ language: selectedLanguage });
             const data = result.data as any[];
-            setDecks(
-                data.map((deck) => ({
+            const newDeck = {
+                id: 'new-deck-id',
+                name: 'Review of the Day',
+                description: 'This deck contains the words you have reviewed today',
+                language: selectedLanguage,
+            };
+            setDecks([
+                {
+                    id: newDeck.id,
+                    name: newDeck.name,
+                    description: newDeck.description,
+                    language: newDeck.language,
+                },
+                ...data.map((deck) => ({
                     id: deck.id,
                     name: deck.deckName,
                     description: deck.description,
                     language: deck.language,
-                }))
-            );
+                })),
+            ]);
         } catch (err: any) {
             console.error("Error fetching decks:", err);
             setError(err.message);
@@ -208,6 +221,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginHorizontal: width * 0.1,
         backgroundColor: '#88C0D0',
+        borderRadius: 10,
+    },
+    specialdeck: {
+        width: width * 0.8,
+        height: width * 0.8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: width * 0.1,
+        backgroundColor: '#FFD700',
         borderRadius: 10,
     },
     deckIDText: {
