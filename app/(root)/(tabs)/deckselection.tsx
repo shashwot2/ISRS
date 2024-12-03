@@ -166,7 +166,7 @@ const DeckSelection: React.FC = () => {
                 animationType="slide"
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>\
+                    <View style={styles.modalContent}>
                         <Text>Enter Deck Name</Text>
                         <TextInput
                             style={styles.input}
