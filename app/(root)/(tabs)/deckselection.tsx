@@ -46,26 +46,19 @@ const DeckSelection: React.FC = () => {
         try {
             const result = await getDecks({ language: selectedLanguage });
             const data = result.data as any[];
-            const newDeck = {
-                id: 'OHkX7WkQY3MlCIBNafn1',
-                name: 'Review of the Day',
-                description: 'This deck contains the words you have reviewed today',
-                language: selectedLanguage,
-            };
-            setDecks([
-                {
-                    id: newDeck.id,
-                    name: newDeck.name,
-                    description: newDeck.description,
-                    language: newDeck.language,
-                },
-                ...data.map((deck) => ({
-                    id: deck.id,
-                    name: deck.deckName,
-                    description: deck.description,
-                    language: deck.language,
-                })),
-            ]);
+            const mappedDecks = data.map((deck) => ({
+                id: deck.id,
+                name: deck.deckName,
+                description: deck.description,
+                language: deck.language,
+            }));
+            mappedDecks.forEach((deck, index) => {
+                if (deck.name === "Review of the Day") {
+                    const [deckToMove] = mappedDecks.splice(index, 1);  // Remove the deck from its current position
+                    mappedDecks.unshift(deckToMove);  // Add the deck to the beginning of the array
+                }
+            });
+            setDecks(mappedDecks);
         } catch (err: any) {
             console.error("Error fetching decks:", err);
             setError(err.message);
