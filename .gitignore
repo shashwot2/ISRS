@@ -138,3 +138,4 @@ expo-env.d.ts
 
 .expo
 .expo/*
+/android
