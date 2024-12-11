@@ -15,24 +15,8 @@ import {
 import { useLanguageLearning } from "../../../context/languagecontext";
 import { useAuth } from "../../../context/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import {
-  Brain,
-  Clock,
-  Target,
-  Lightbulb,
-  Zap,
-  BarChart2,
-  Settings,
-  Calendar,
-  ChevronRight,
-  TrendingUp,
-  BookOpen,
-  Repeat,
-  LogOut,
-  Edit2,
-} from "lucide-react-native";
-import { EditProfileModal } from "./editavatar";
-
+import { Feather } from "@expo/vector-icons";
+import { EditProfileModal } from "../../../components/editavatar";
 
 // Types
 interface MemoryMetric {
@@ -40,7 +24,7 @@ interface MemoryMetric {
   value: number;
   total: number;
   color: string;
-  icon: React.ReactNode;
+  icon: { name: keyof typeof Feather.glyphMap; color?: string };
   description: string;
 }
 
@@ -131,7 +115,6 @@ type Styles = {
 };
 
 export default function ProfileScreen() {
-
   // get language and user data from context
   const { selectedLanguage } = useLanguageLearning();
   const { user, updateProfile } = useAuth();
@@ -162,8 +145,8 @@ export default function ProfileScreen() {
         setUserPreferences(preferencesResult.data);
 
         // Get user's decks
-        const getDecks = httpsCallable(functions, 'getDecks');
-        const decksResult = await getDecks({language: selectedLanguage});
+        const getDecksFunc = httpsCallable(functions, 'getDecks');
+        const decksResult = await getDecksFunc({language: selectedLanguage});
         const userDecks = decksResult.data as Deck[];
         setDecks(userDecks);
 
@@ -248,7 +231,7 @@ export default function ProfileScreen() {
         value: correctAnswers,
         total: totalAttempts,
         color: "#4CAF50",
-        icon: <Brain size={24} />,
+        icon: { name: "user" },
         description: "Words successfully stored in long-term memory",
       },
       {
@@ -256,7 +239,7 @@ export default function ProfileScreen() {
         value: totalWords,
         total: Math.max(totalWords, 100),
         color: "#2196F3",
-        icon: <Zap size={24} />,
+        icon: { name: "zap" },
         description: "Words currently in active learning phase",
       },
       {
@@ -264,7 +247,7 @@ export default function ProfileScreen() {
         value: totalAttempts > 0 ? Math.round((correctAnswers / totalAttempts) * 100) : 0,
         total: 100,
         color: "#FF9800",
-        icon: <TrendingUp size={24} />,
+        icon: { name: "trending-up" },
         description: "Overall learning progress rate",
       },
     ];
@@ -327,7 +310,7 @@ export default function ProfileScreen() {
               style={styles.editAvatarButton}
               onPress={() => setIsEditModalVisible(true)}
             >
-              <Edit2 size={20} color="#fff" />
+              <Feather name="edit-2" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={styles.levelBadge}>
               <Text style={styles.levelText}>
@@ -346,13 +329,13 @@ export default function ProfileScreen() {
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Brain size={24} color="#4CAF50" />
+          <Feather name="user" size={24} color="#4CAF50" />
           <Text style={styles.statValue}>{retentionRate}%</Text>
           <Text style={styles.statLabel}>Retention</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Target size={24} color="#2196F3" />
+          <Feather name="target" size={24} color="#2196F3" />
           <Text style={styles.statValue}>
             {progress.total > 0 ? Math.round((progress.correct / progress.total) * 100) : 0}%
           </Text>
@@ -360,7 +343,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <BookOpen size={24} color="#FF9800" />
+          <Feather name="book-open" size={24} color="#FF9800" />
           <Text style={styles.statValue}>
             {decks.reduce((acc, deck) => acc + (deck.cards?.length || 0), 0)}
           </Text>
@@ -375,9 +358,7 @@ export default function ProfileScreen() {
         {memoryMetrics.map((metric, index) => (
           <View key={index} style={styles.memoryCard}>
             <View style={styles.cardHeader}>
-              {React.cloneElement(metric.icon as React.ReactElement, {
-                color: metric.color,
-              })}
+              <Feather name={metric.icon.name} size={24} color={metric.color} />
               <View style={styles.memoryInfo}>
                 <Text style={styles.memoryTitle}>{metric.title}</Text>
                 <Text style={styles.memoryDescription}>
@@ -410,7 +391,7 @@ export default function ProfileScreen() {
         <View style={styles.learningInsights}>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
-              <Clock size={24} color="#4CAF50" />
+              <Feather name="clock" size={24} color="#4CAF50" />
               <Text style={styles.insightTitle}>Study Pattern</Text>
             </View>
             <Text style={styles.insightValue}>
@@ -419,7 +400,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
-              <TrendingUp size={24} color="#2196F3" />
+              <Feather name="trending-up" size={24} color="#2196F3" />
               <Text style={styles.insightTitle}>Learning Style</Text>
             </View>
             <Text style={styles.insightValue}>
@@ -432,11 +413,11 @@ export default function ProfileScreen() {
       {/* Quick Actions */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.actionButton}>
-          <BarChart2 size={24} color="#333" />
+          <Feather name="bar-chart-2" size={24} color="#333" />
           <Text style={styles.actionButtonText}>Detailed Analytics</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
-          <Settings size={24} color="#333" />
+          <Feather name="settings" size={24} color="#333" />
           <Text style={styles.actionButtonText}>Learning Settings</Text>
         </TouchableOpacity>
       </View>
